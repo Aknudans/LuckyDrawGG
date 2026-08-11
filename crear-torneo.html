@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crear torneo — Commander</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --bg-card: #171a21;
+    --bg-card-2: #1c2029;
+    --border: #2a2f3a;
+    --text: #eef0f4;
+    --text-dim: #9aa1ad;
+    --accent: #c9a227;
+    --accent-soft: rgba(201, 162, 39, 0.15);
+    --danger: #d9534f;
+    --danger-soft: rgba(217, 83, 79, 0.15);
+    --ok: #4caf7d;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(circle at 50% 0%, #191d26 0%, var(--bg) 60%);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px 90px;
+  }
+
+  .topbar {
+    width: 100%;
+    max-width: 780px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+  }
+
+  .topbar a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 0.85rem;
+  }
+  .topbar a:hover { color: var(--text); }
+
+  h1 {
+    font-size: 1.6rem;
+    margin: 0 0 6px;
+  }
+
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    margin-bottom: 30px;
+  }
+
+  .panel {
+    width: 100%;
+    max-width: 780px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    margin-bottom: 22px;
+  }
+
+  .panel h2 {
+    font-size: 1.05rem;
+    margin: 0 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .step-badge {
+    font-size: 0.7rem;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border: 1px solid rgba(201,162,39,0.4);
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-weight: 700;
+  }
+
+  label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  input[type="number"], input[type="text"] {
+    width: 100%;
+    background: #0f1218;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 10px 12px;
+    font-size: 0.95rem;
+  }
+  input[type="number"]:focus, input[type="text"]:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+  .row .field { flex: 1; min-width: 160px; }
+
+  button {
+    background: var(--accent);
+    color: #1a1a1a;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  button:hover { opacity: 0.88; }
+  button.secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .hint {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+
+  .warning {
+    background: var(--danger-soft);
+    border: 1px solid rgba(217,83,79,0.4);
+    color: #f2a29f;
+    font-size: 0.82rem;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-top: 12px;
+    display: none;
+  }
+  .warning.show { display: block; }
+
+  .pods-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+  }
+
+  .pod-card {
+    background: var(--bg-card-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+
+  .pod-card h3 {
+    font-size: 0.85rem;
+    margin: 0 0 12px;
+    color: var(--accent);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .pod-card input {
+    margin-bottom: 8px;
+  }
+
+  .pod-card .player-line {
+    padding: 8px 10px;
+    background: #0f1218;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+  }
+
+  .actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  .hidden { display: none; }
+
+  /* Timer */
+  .timer-display {
+    font-size: 3.2rem;
+    font-weight: 800;
+    text-align: center;
+    letter-spacing: 0.03em;
+    margin: 10px 0 18px;
+    font-variant-numeric: tabular-nums;
+  }
+  .timer-display.warn { color: #e0a531; }
+  .timer-display.danger { color: var(--danger); animation: pulse 1s infinite; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .timer-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .timer-setup {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 18px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .timer-setup input {
+    width: 80px;
+    text-align: center;
+  }
+  .timer-setup label {
+    margin: 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="index.html">&larr; Volver al inicio</a>
+  <span style="color:var(--text-dim); font-size:0.8rem;">Magic: The Gathering — Commander</span>
+</div>
+
+<h1>Crear torneo</h1>
+<div class="subtitle">Pods de 3 a 5 jugadores, nunca 1v1 ni parejas sueltas.</div>
+
+<!-- STEP 1 -->
+<div class="panel" id="step1">
+  <h2><span class="step-badge">Paso 1</span> ¿Cuántos participantes?</h2>
+  <div class="row">
+    <div class="field">
+      <label for="participantCount">Cantidad de participantes</label>
+      <input type="number" id="participantCount" min="3" placeholder="ej: 10">
+    </div>
+    <button id="generatePodsBtn">Generar pods</button>
+  </div>
+  <div class="warning" id="countWarning"></div>
+  <div class="hint">Se arman pods de 3 a 5 jugadores (ideal 4). El sobrante se reparte entre pods existentes en vez de dejar 1v1 o parejas sueltas.</div>
+</div>
+
+<!-- STEP 2 -->
+<div class="panel hidden" id="step2">
+  <h2><span class="step-badge">Paso 2</span> Cargá los nombres</h2>
+  <div id="podsGridInput" class="pods-grid"></div>
+  <div class="actions">
+    <button id="shuffleBtn">🔀 Sortear enfrentamientos</button>
+    <button class="secondary" id="editCountBtn">Cambiar cantidad</button>
+  </div>
+  <div class="hint">El orden en que cargues los nombres no importa: al sortear se redistribuyen al azar entre los pods, respetando el tamaño de cada uno.</div>
+</div>
+
+<!-- STEP 3 -->
+<div class="panel hidden" id="step3">
+  <h2><span class="step-badge">Paso 3</span> Pods sorteados — Ronda 1</h2>
+  <div id="podsGridResult" class="pods-grid"></div>
+  <div class="actions">
+    <button id="reshuffleBtn">🔀 Volver a sortear</button>
+  </div>
+</div>
+
+<!-- TIMER -->
+<div class="panel hidden" id="timerPanel">
+  <h2>⏱️ Temporizador de ronda</h2>
+  <div class="timer-setup">
+    <label for="timerMinutes">Minutos por ronda</label>
+    <input type="number" id="timerMinutes" min="1" value="50">
+    <button class="secondary" id="applyTimerBtn">Aplicar</button>
+  </div>
+  <div class="timer-display" id="timerDisplay">50:00</div>
+  <div class="timer-controls">
+    <button id="startPauseBtn">▶️ Iniciar</button>
+    <button class="secondary" id="resetTimerBtn">⟲ Reiniciar</button>
+  </div>
+  <div class="hint" id="timerHint" style="text-align:center; margin-top:14px;"></div>
+</div>
+
+<script>
+(function () {
+  // ---------- Pod distribution ----------
+  function distributePods(n) {
+    if (n < 3) return null;
+
+    let bestNumPods = null;
+    let bestDiff = Infinity;
+    const minPods = Math.ceil(n / 5);
+    const maxPods = Math.floor(n / 3);
+
+    for (let p = minPods; p <= maxPods; p++) {
+      const diff = Math.abs((n / p) - 4);
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        bestNumPods = p;
+      }
+    }
+
+    if (bestNumPods === null) return null;
+
+    const base = Math.floor(n / bestNumPods);
+    const extra = n % bestNumPods;
+    const pods = new Array(bestNumPods).fill(base);
+    for (let i = 0; i < extra; i++) pods[i]++;
+    return pods;
+  }
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  let podSizes = [];
+
+  // ---------- Step 1 ----------
+  const participantCount = document.getElementById('participantCount');
+  const generatePodsBtn = document.getElementById('generatePodsBtn');
+  const countWarning = document.getElementById('countWarning');
+  const step1 = document.getElementById('step1');
+  const step2 = document.getElementById('step2');
+  const step3 = document.getElementById('step3');
+  const timerPanel = document.getElementById('timerPanel');
+  const podsGridInput = document.getElementById('podsGridInput');
+  const podsGridResult = document.getElementById('podsGridResult');
+
+  generatePodsBtn.addEventListener('click', () => {
+    const n = parseInt(participantCount.value, 10);
+    countWarning.classList.remove('show');
+
+    if (!n || n < 3) {
+      countWarning.textContent = 'Se necesitan al menos 3 participantes para armar un pod de Commander.';
+      countWarning.classList.add('show');
+      return;
+    }
+
+    podSizes = distributePods(n);
+    renderInputPods(podSizes);
+    step2.classList.remove('hidden');
+    step3.classList.add('hidden');
+    timerPanel.classList.add('hidden');
+    step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  document.getElementById('editCountBtn').addEventListener('click', () => {
+    step2.classList.add('hidden');
+    step1.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  function renderInputPods(sizes) {
+    podsGridInput.innerHTML = '';
+    sizes.forEach((size, podIndex) => {
+      const card = document.createElement('div');
+      card.className = 'pod-card';
+      const title = document.createElement('h3');
+      title.innerHTML = `<span>Pod ${podIndex + 1}</span><span>${size} jugadores</span>`;
+      card.appendChild(title);
+      for (let i = 0; i < size; i++) {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = `Jugador ${i + 1}`;
+        input.className = 'player-name-input';
+        card.appendChild(input);
+      }
+      podsGridInput.appendChild(card);
+    });
+  }
+
+  // ---------- Step 2 -> Shuffle ----------
+  document.getElementById('shuffleBtn').addEventListener('click', () => {
+    const names = Array.from(document.querySelectorAll('.player-name-input'))
+      .map(inp => inp.value.trim())
+      .filter(v => v.length > 0);
+
+    const total = podSizes.reduce((a, b) => a + b, 0);
+    if (names.length !== total) {
+      countWarning.textContent = `Cargaste ${names.length} nombre(s) pero se esperaban ${total}. Completá todos los casilleros.`;
+      countWarning.classList.add('show');
+      step2.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+    countWarning.classList.remove('show');
+
+    const shuffled = shuffle(names);
+    renderResultPods(podSizes, shuffled);
+
+    step3.classList.remove('hidden');
+    timerPanel.classList.remove('hidden');
+    step3.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  document.getElementById('reshuffleBtn').addEventListener('click', () => {
+    const names = Array.from(document.querySelectorAll('#podsGridResult .player-line'))
+      .map(el => el.textContent);
+    const shuffled = shuffle(names);
+    renderResultPods(podSizes, shuffled);
+  });
+
+  function renderResultPods(sizes, names) {
+    podsGridResult.innerHTML = '';
+    let cursor = 0;
+    sizes.forEach((size, podIndex) => {
+      const card = document.createElement('div');
+      card.className = 'pod-card';
+      const title = document.createElement('h3');
+      title.innerHTML = `<span>Pod ${podIndex + 1}</span><span>${size} jugadores</span>`;
+      card.appendChild(title);
+      for (let i = 0; i < size; i++) {
+        const line = document.createElement('div');
+        line.className = 'player-line';
+        line.textContent = names[cursor];
+        card.appendChild(line);
+        cursor++;
+      }
+      podsGridResult.appendChild(card);
+    });
+  }
+
+  // ---------- Timer ----------
+  const timerMinutesInput = document.getElementById('timerMinutes');
+  const applyTimerBtn = document.getElementById('applyTimerBtn');
+  const timerDisplay = document.getElementById('timerDisplay');
+  const startPauseBtn = document.getElementById('startPauseBtn');
+  const resetTimerBtn = document.getElementById('resetTimerBtn');
+  const timerHint = document.getElementById('timerHint');
+
+  let totalSeconds = 50 * 60;
+  let remainingSeconds = totalSeconds;
+  let timerInterval = null;
+  let running = false;
+
+  function formatTime(s) {
+    const m = Math.floor(Math.abs(s) / 60).toString().padStart(2, '0');
+    const sec = Math.abs(s % 60).toString().padStart(2, '0');
+    return (s < 0 ? '-' : '') + `${m}:${sec}`;
+  }
+
+  function renderTimer() {
+    timerDisplay.textContent = formatTime(remainingSeconds);
+    timerDisplay.classList.remove('warn', 'danger');
+    if (remainingSeconds <= 0) {
+      timerDisplay.classList.add('danger');
+      timerHint.textContent = '¡Tiempo de ronda cumplido! Definir por vida restante / daño de comandante según reglas del torneo.';
+    } else if (remainingSeconds <= 300) {
+      timerDisplay.classList.add('warn');
+      timerHint.textContent = 'Últimos 5 minutos de ronda.';
+    } else {
+      timerHint.textContent = '';
+    }
+  }
+
+  applyTimerBtn.addEventListener('click', () => {
+    const mins = parseInt(timerMinutesInput.value, 10);
+    if (!mins || mins < 1) return;
+    totalSeconds = mins * 60;
+    remainingSeconds = totalSeconds;
+    stopTimer();
+    renderTimer();
+  });
+
+  function stopTimer() {
+    running = false;
+    clearInterval(timerInterval);
+    startPauseBtn.textContent = '▶️ Iniciar';
+  }
+
+  startPauseBtn.addEventListener('click', () => {
+    if (running) {
+      stopTimer();
+    } else {
+      running = true;
+      startPauseBtn.textContent = '⏸️ Pausar';
+      timerInterval = setInterval(() => {
+        remainingSeconds--;
+        renderTimer();
+      }, 1000);
+    }
+  });
+
+  resetTimerBtn.addEventListener('click', () => {
+    stopTimer();
+    remainingSeconds = totalSeconds;
+    renderTimer();
+  });
+
+  renderTimer();
+})();
+</script>
+
+</body>
+</html>

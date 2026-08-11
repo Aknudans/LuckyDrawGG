@@ -1,0 +1,680 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Big+Shoulders:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  .dmb-app {
+    --bg: #14141A;
+    --panel: #1C1D26;
+    --panel-2: #21222E;
+    --border: #2E2F3D;
+    --border-soft: #26273349;
+    --text: #EDEBE3;
+    --text-muted: #8B8A9A;
+    --gold: #C9A227;
+    --gold-soft: rgba(201,162,39,0.12);
+    --danger: #C1554A;
+    --danger-soft: rgba(193,85,74,0.14);
+    --success: #5B8A72;
+    --success-soft: rgba(91,138,114,0.14);
+
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    border-radius: 14px;
+    padding: 28px;
+    max-width: 760px;
+    margin: 0 auto;
+    box-sizing: border-box;
+  }
+  .dmb-app * { box-sizing: border-box; }
+
+  .dmb-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .dmb-title {
+    font-family: 'Big Shoulders', sans-serif;
+    font-weight: 800;
+    font-size: 30px;
+    letter-spacing: 0.01em;
+    margin: 0 0 22px 0;
+    line-height: 1.05;
+  }
+
+  .dmb-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 16px;
+  }
+  .dmb-tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px 8px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 7px;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: background .15s, color .15s;
+    user-select: none;
+  }
+  .dmb-tab.active {
+    background: var(--gold-soft);
+    color: var(--gold);
+    font-weight: 600;
+  }
+  .dmb-tab:not(.active):hover { color: var(--text); }
+
+  .dmb-hint {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    line-height: 1.5;
+  }
+
+  .dmb-textarea {
+    width: 100%;
+    min-height: 210px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.6;
+    padding: 14px;
+    resize: vertical;
+  }
+  .dmb-textarea:focus { outline: 1px solid var(--gold); border-color: var(--gold); }
+
+  .dmb-link-row { display: flex; gap: 8px; }
+  .dmb-input {
+    flex: 1;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    padding: 12px 14px;
+  }
+  .dmb-input:focus { outline: 1px solid var(--gold); border-color: var(--gold); }
+
+  .dmb-btn {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    font-size: 13.5px;
+    background: var(--gold);
+    color: #1A1506;
+    border: none;
+    border-radius: 9px;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: filter .15s, transform .1s;
+  }
+  .dmb-btn:hover { filter: brightness(1.08); }
+  .dmb-btn:active { transform: scale(0.98); }
+  .dmb-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .dmb-btn-ghost {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+  .dmb-btn-ghost:hover { color: var(--text); border-color: var(--text-muted); }
+
+  .dmb-actions { margin-top: 14px; display: flex; gap: 10px; align-items: center; }
+  .dmb-spinner-label { font-size: 12.5px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+
+  .dmb-results { margin-top: 26px; display: none; }
+  .dmb-results.show { display: block; }
+
+  .dmb-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+  }
+  .dmb-summary-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 20px;
+    font-weight: 600;
+  }
+  .dmb-summary-count span { color: var(--text-muted); font-size: 14px; }
+  .dmb-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .dmb-badge.ok { background: var(--success-soft); color: var(--success); }
+  .dmb-badge.warn { background: var(--gold-soft); color: var(--gold); }
+  .dmb-badge.err { background: var(--danger-soft); color: var(--danger); }
+
+  .dmb-section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 22px 0 10px 0;
+  }
+
+  .dmb-commander-card {
+    display: flex;
+    gap: 14px;
+    background: linear-gradient(135deg, var(--gold-soft), transparent 70%);
+    border: 1.5px solid var(--gold);
+    border-radius: 12px;
+    padding: 14px;
+    position: relative;
+  }
+  .dmb-commander-img {
+    width: 64px;
+    height: 89px;
+    border-radius: 6px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+    object-fit: cover;
+  }
+  .dmb-commander-name { font-weight: 600; font-size: 15.5px; margin-bottom: 3px; }
+  .dmb-commander-type { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+  .dmb-link-action {
+    font-size: 12px;
+    color: var(--gold);
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .dmb-warning-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: var(--danger-soft);
+    border: 1px solid rgba(193,85,74,0.35);
+    border-radius: 8px;
+    padding: 9px 12px;
+    margin-bottom: 6px;
+    font-size: 12.5px;
+  }
+  .dmb-warning-item.mild { background: var(--gold-soft); border-color: rgba(201,162,39,0.35); }
+
+  .dmb-ledger {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .dmb-ledger-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .dmb-ledger-row:last-child { border-bottom: none; }
+  .dmb-ledger-row:nth-child(odd) { background: rgba(255,255,255,0.015); }
+  .dmb-ledger-qty { color: var(--text-muted); width: 26px; text-align: right; }
+  .dmb-ledger-name { flex: 1; font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; }
+  .dmb-ledger-status { width: 16px; text-align: center; }
+  .dmb-ledger-status.ok { color: var(--success); }
+  .dmb-ledger-status.err { color: var(--danger); }
+  .dmb-ledger-star {
+    font-size: 11px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 3px 7px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+  }
+  .dmb-ledger-star:hover { color: var(--gold); border-color: var(--gold); }
+
+  .dmb-manual-panel {
+    display: none;
+    margin-top: 10px;
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .dmb-manual-panel.show { display: block; }
+
+  .dmb-fallback {
+    background: var(--panel);
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .dmb-fallback strong { color: var(--text); }
+</style>
+
+<div class="dmb-app" id="dmbApp">
+  <div class="dmb-eyebrow">Módulo · Armar mazo</div>
+  <h1 class="dmb-title">Registrá tu mazo de Commander</h1>
+
+  <div class="dmb-tabs">
+    <div class="dmb-tab active" data-tab="moxfield">Formato Moxfield</div>
+    <div class="dmb-tab" data-tab="plaintext">Texto plano</div>
+    <div class="dmb-tab" data-tab="link">Link de Moxfield</div>
+  </div>
+
+  <div id="dmbHint" class="dmb-hint"></div>
+
+  <div id="dmbTextPane">
+    <textarea class="dmb-textarea" id="dmbTextarea" spellcheck="false"></textarea>
+  </div>
+
+  <div id="dmbLinkPane" style="display:none;">
+    <div class="dmb-link-row">
+      <input class="dmb-input" id="dmbLinkInput" placeholder="https://moxfield.com/decks/xxxxxxxxxxxxx" />
+    </div>
+    <div id="dmbLinkFallback" class="dmb-fallback" style="display:none; margin-top:12px;"></div>
+  </div>
+
+  <div class="dmb-actions">
+    <button class="dmb-btn" id="dmbAnalyzeBtn">Analizar mazo →</button>
+    <button class="dmb-btn dmb-btn-ghost" id="dmbSampleBtn">Usar ejemplo</button>
+    <span class="dmb-spinner-label" id="dmbLoadingLabel" style="display:none;">validando cartas con Scryfall…</span>
+  </div>
+
+  <div class="dmb-results" id="dmbResults">
+    <div class="dmb-summary">
+      <div class="dmb-summary-count" id="dmbCount">0 <span>/ 100 cartas</span></div>
+      <div class="dmb-badge ok" id="dmbBadge">OK</div>
+    </div>
+
+    <div class="dmb-section-label">Comandante</div>
+    <div id="dmbCommanderZone"></div>
+    <div class="dmb-manual-panel" id="dmbManualPanel"></div>
+
+    <div id="dmbWarningsZone"></div>
+
+    <div class="dmb-section-label">Lista completa</div>
+    <div class="dmb-ledger" id="dmbLedger"></div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const root = document.getElementById('dmbApp');
+  const $ = (id) => document.getElementById(id);
+
+  const HINTS = {
+    moxfield: 'Exportá tu mazo desde Moxfield con la opción "Formato Moxfield" (incluye edición y número de coleccionista, y separa la sección "Commander" del resto). Pegá el resultado tal cual.',
+    plaintext: 'Exportá o escribí tu lista en texto plano: "cantidad + nombre" por línea, sin edición. La última línea de la lista se toma como comandante.',
+    link: 'Pegá el link público de tu mazo en Moxfield. Nota: Moxfield todavía no nos dio acceso autorizado a su API — si la importación directa falla, te ofrecemos el paso siguiente para pegar el texto en su lugar.',
+  };
+
+  const SAMPLES = {
+    moxfield:
+`Commander
+1 Atraxa, Praetors' Voice (ONE) 231
+
+Deck
+1 Sol Ring (LTC) 156
+1 Arcane Signet (ELD) 331
+1 Command Tower (LTC) 348
+1 Cultivate (M19) 187
+1 Swords to Plowshares (LTC) 96
+1 Cyclonic Rift (RNA) 193
+1 Smothering Tithe (RNA) 100
+1 Rhystic Study (LTC) 105
+1 Farseek (LTC) 178
+1 Wrath of God (M19) 15
+1 Vampiric Tutor (LTC) 65
+1 Rhystic Study (STA) 30
+15 Forest
+15 Island
+14 Plains`,
+    plaintext:
+`1 Sol Ring
+1 Arcane Signet
+1 Command Tower
+1 Cultivate
+1 Swords to Plowshares
+1 Cyclonic Rift
+1 Smothering Tithe
+1 Rhystic Study
+1 Farseek
+1 Wrath of God
+1 Vampiric Tutor
+15 Forest
+15 Island
+14 Plains
+1 Atraxa, Praetors' Voice`,
+  };
+
+  let state = {
+    tab: 'moxfield',
+    commanderCards: [],
+    deckCards: [],
+    resolved: {},
+    manualCommanderKeys: null, // Set of "name" keys if user overrides
+  };
+
+  // ---------- Tabs ----------
+  document.querySelectorAll('.dmb-tab').forEach(tabEl => {
+    tabEl.addEventListener('click', () => {
+      document.querySelectorAll('.dmb-tab').forEach(t => t.classList.remove('active'));
+      tabEl.classList.add('active');
+      state.tab = tabEl.dataset.tab;
+      $('dmbHint').textContent = HINTS[state.tab];
+      $('dmbTextPane').style.display = state.tab === 'link' ? 'none' : 'block';
+      $('dmbLinkPane').style.display = state.tab === 'link' ? 'block' : 'none';
+      $('dmbSampleBtn').style.display = state.tab === 'link' ? 'none' : 'inline-block';
+      $('dmbLinkFallback').style.display = 'none';
+    });
+  });
+  $('dmbHint').textContent = HINTS.moxfield;
+
+  $('dmbSampleBtn').addEventListener('click', () => {
+    $('dmbTextarea').value = SAMPLES[state.tab] || SAMPLES.moxfield;
+  });
+
+  // ---------- Parsing helpers ----------
+  const HEADER_WORDS = ['commander', 'deck', 'sideboard', 'maybeboard', 'companion'];
+  const BASIC_LANDS = ['plains', 'island', 'swamp', 'mountain', 'forest', 'wastes'];
+
+  function isSkippableLine(line) {
+    const t = line.trim().toLowerCase();
+    if (t === '') return true;
+    if (HEADER_WORDS.includes(t)) return true;
+    if (/^\d+\s+cards?$/.test(t)) return true;
+    return false;
+  }
+
+  function parseCardLine(line) {
+    const t = line.trim();
+    const m = t.match(/^(\d+)\s*x?\s+(.+)$/i);
+    if (!m) return null;
+    const qty = parseInt(m[1], 10);
+    let rest = m[2].trim();
+    let set = null, collector = null;
+    const setMatch = rest.match(/^(.*?)\s+\(([A-Za-z0-9]{2,5})\)\s*([A-Za-z0-9À-ÿ★\-\/]*)\s*$/);
+    if (setMatch) {
+      rest = setMatch[1].trim();
+      set = setMatch[2].toUpperCase();
+      collector = setMatch[3] || null;
+    }
+    return { qty, name: rest, set, collector, raw: line };
+  }
+
+  function isBasicLand(name) {
+    let n = name.toLowerCase().replace(/^snow-covered\s+/, '');
+    return BASIC_LANDS.includes(n);
+  }
+
+  function parseMoxfieldFormat(text) {
+    const lines = text.split('\n');
+    let commanderLines = [];
+    let deckLines = [];
+    const commanderIdx = lines.findIndex(l => l.trim().toLowerCase() === 'commander');
+
+    if (commanderIdx !== -1) {
+      let i = commanderIdx + 1;
+      while (i < lines.length && lines[i].trim() !== '' && lines[i].trim().toLowerCase() !== 'deck') {
+        if (!isSkippableLine(lines[i])) commanderLines.push(lines[i]);
+        i++;
+      }
+      const deckIdx = lines.findIndex((l, idx) => idx > commanderIdx && l.trim().toLowerCase() === 'deck');
+      let start = deckIdx !== -1 ? deckIdx + 1 : i;
+      for (let j = start; j < lines.length; j++) {
+        const t = lines[j].trim().toLowerCase();
+        if (t === 'sideboard' || t === 'maybeboard') break;
+        if (!isSkippableLine(lines[j])) deckLines.push(lines[j]);
+      }
+    } else {
+      // Fallback: no explicit "Commander" header found -> first card line is the commander
+      const cardLines = lines.filter(l => !isSkippableLine(l));
+      commanderLines = cardLines.slice(0, 1);
+      deckLines = cardLines.slice(1);
+    }
+
+    return {
+      commanderCards: commanderLines.map(parseCardLine).filter(Boolean),
+      deckCards: deckLines.map(parseCardLine).filter(Boolean),
+    };
+  }
+
+  function parsePlaintextFormat(text) {
+    const lines = text.split('\n').filter(l => !isSkippableLine(l));
+    const cardLines = lines.map(parseCardLine).filter(Boolean);
+    const commanderCards = cardLines.slice(-1);
+    const deckCards = cardLines.slice(0, -1);
+    return { commanderCards, deckCards };
+  }
+
+  // ---------- Scryfall ----------
+  async function resolveWithScryfall(names) {
+    const unique = [...new Set(names)];
+    const resolved = {};
+    const chunkSize = 75;
+    for (let i = 0; i < unique.length; i += chunkSize) {
+      const chunk = unique.slice(i, i + chunkSize);
+      try {
+        const res = await fetch('https://api.scryfall.com/cards/collection', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifiers: chunk.map(name => ({ name })) }),
+        });
+        const data = await res.json();
+        (data.data || []).forEach(card => { resolved[card.name.toLowerCase()] = card; });
+      } catch (e) {
+        // network issue — leave unresolved, UI will flag as "sin validar"
+      }
+    }
+    return resolved;
+  }
+
+  function findResolved(name) {
+    return state.resolved[name.toLowerCase()] || null;
+  }
+
+  // ---------- Rendering ----------
+  function cardKey(c) { return c.name.toLowerCase(); }
+
+  function renderResults() {
+    const allCards = [...state.commanderCards, ...state.deckCards];
+    const total = allCards.reduce((sum, c) => sum + c.qty, 0);
+
+    // duplicate check (excluding basics)
+    const counts = {};
+    allCards.forEach(c => {
+      const k = cardKey(c);
+      if (isBasicLand(c.name)) return;
+      counts[k] = (counts[k] || 0) + c.qty;
+    });
+    const duplicates = Object.entries(counts).filter(([, n]) => n > 1);
+
+    // unresolved
+    const unresolved = allCards.filter(c => !findResolved(c.name));
+
+    // status badge
+    const badge = $('dmbBadge');
+    if (total === 100 && duplicates.length === 0 && unresolved.length === 0) {
+      badge.className = 'dmb-badge ok'; badge.textContent = 'LISTO';
+    } else if (total > 100 || duplicates.length > 0 || unresolved.length > 0) {
+      badge.className = 'dmb-badge err'; badge.textContent = 'REVISAR';
+    } else {
+      badge.className = 'dmb-badge warn'; badge.textContent = 'INCOMPLETO';
+    }
+    $('dmbCount').innerHTML = total + ' <span>/ 100 cartas</span>';
+
+    renderCommanderZone();
+    renderWarnings(duplicates, unresolved, total);
+    renderLedger(allCards);
+
+    $('dmbResults').classList.add('show');
+  }
+
+  function renderCommanderZone() {
+    const zone = $('dmbCommanderZone');
+    const commanders = state.manualCommanderKeys
+      ? [...state.commanderCards, ...state.deckCards].filter(c => state.manualCommanderKeys.has(cardKey(c)))
+      : state.commanderCards;
+
+    if (commanders.length === 0) {
+      zone.innerHTML = `<div class="dmb-fallback">No pudimos detectar un comandante automáticamente. Elegilo manualmente en la lista de abajo.</div>`;
+      return;
+    }
+
+    zone.innerHTML = commanders.map(c => {
+      const card = findResolved(c.name);
+      const img = card?.image_uris?.art_crop || card?.card_faces?.[0]?.image_uris?.art_crop || '';
+      const typeLine = card?.type_line || (card ? '' : 'Sin validar todavía');
+      const legalWarning = card && !(/legendary/i.test(typeLine) && (/creature/i.test(typeLine) || /planeswalker/i.test(typeLine)))
+        ? `<div style="color:var(--danger); font-size:11.5px; margin-top:4px;">⚠ El tipo de carta no es el típico de un comandante — confirmá que sea correcto.</div>` : '';
+      return `
+        <div class="dmb-commander-card" style="margin-bottom:8px;">
+          ${img ? `<img class="dmb-commander-img" src="${img}" alt="${c.name}" />` : `<div class="dmb-commander-img"></div>`}
+          <div>
+            <div class="dmb-commander-name">${c.name}</div>
+            <div class="dmb-commander-type">${typeLine}</div>
+            ${legalWarning}
+            <span class="dmb-link-action" onclick="document.getElementById('dmbManualPanel').classList.toggle('show')">¿No es tu comandante? Elegir otra carta</span>
+          </div>
+        </div>`;
+    }).join('');
+
+    renderManualPanel();
+  }
+
+  function renderManualPanel() {
+    const allCards = [...state.commanderCards, ...state.deckCards];
+    const panel = $('dmbManualPanel');
+    panel.innerHTML = allCards.map(c => `
+      <div class="dmb-ledger-row">
+        <span class="dmb-ledger-qty">${c.qty}</span>
+        <span class="dmb-ledger-name">${c.name}</span>
+        <span class="dmb-ledger-star" data-name="${c.name}">marcar como comandante</span>
+      </div>`).join('');
+    panel.querySelectorAll('.dmb-ledger-star').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const name = btn.dataset.name;
+        const key = name.toLowerCase();
+        if (!state.manualCommanderKeys) state.manualCommanderKeys = new Set();
+        if (state.manualCommanderKeys.has(key)) {
+          state.manualCommanderKeys.delete(key);
+        } else {
+          state.manualCommanderKeys.add(key);
+        }
+        renderCommanderZone();
+      });
+    });
+  }
+
+  function renderWarnings(duplicates, unresolved, total) {
+    const zone = $('dmbWarningsZone');
+    let html = '';
+    if (total !== 100) {
+      html += `<div class="dmb-warning-item mild"><span>El mazo tiene ${total} cartas — un mazo de Commander necesita exactamente 100 (comandante incluido).</span></div>`;
+    }
+    duplicates.forEach(([name, n]) => {
+      html += `<div class="dmb-warning-item"><span>"${name}" aparece ${n} veces — Commander es singleton (una copia salvo tierras básicas).</span></div>`;
+    });
+    unresolved.forEach(c => {
+      html += `<div class="dmb-warning-item"><span>No pudimos validar "${c.name}" contra Scryfall — puede ser un error de tipeo.</span><span class="dmb-link-action" onclick="document.getElementById('dmbManualPanel').classList.add('show')">corregir</span></div>`;
+    });
+    zone.innerHTML = html;
+  }
+
+  function renderLedger(allCards) {
+    const ledger = $('dmbLedger');
+    ledger.innerHTML = allCards.map(c => {
+      const resolvedCard = findResolved(c.name);
+      const statusClass = resolvedCard ? 'ok' : 'err';
+      const statusIcon = resolvedCard ? '✓' : '!';
+      return `
+        <div class="dmb-ledger-row">
+          <span class="dmb-ledger-qty">${c.qty}×</span>
+          <span class="dmb-ledger-name">${c.name}${c.set ? ` <span style="color:var(--text-muted)">(${c.set})</span>` : ''}</span>
+          <span class="dmb-ledger-status ${statusClass}">${statusIcon}</span>
+        </div>`;
+    }).join('');
+  }
+
+  // ---------- Analyze ----------
+  async function analyze() {
+    if (state.tab === 'link') {
+      return handleLinkImport();
+    }
+
+    const text = $('dmbTextarea').value;
+    if (!text.trim()) return;
+
+    const parsed = state.tab === 'moxfield' ? parseMoxfieldFormat(text) : parsePlaintextFormat(text);
+    state.commanderCards = parsed.commanderCards;
+    state.deckCards = parsed.deckCards;
+    state.manualCommanderKeys = null;
+
+    const allNames = [...state.commanderCards, ...state.deckCards].map(c => c.name);
+    $('dmbLoadingLabel').style.display = 'inline';
+    $('dmbAnalyzeBtn').disabled = true;
+    state.resolved = await resolveWithScryfall(allNames);
+    $('dmbLoadingLabel').style.display = 'none';
+    $('dmbAnalyzeBtn').disabled = false;
+
+    renderResults();
+  }
+
+  async function handleLinkImport() {
+    const url = $('dmbLinkInput').value.trim();
+    const idMatch = url.match(/moxfield\.com\/decks\/([a-zA-Z0-9_-]+)/);
+    const fallback = $('dmbLinkFallback');
+
+    if (!idMatch) {
+      fallback.style.display = 'block';
+      fallback.innerHTML = `Ese link no parece ser un mazo público de Moxfield. Revisá la URL o pegá tu lista en <strong>Formato Moxfield</strong> / <strong>Texto plano</strong>.`;
+      return;
+    }
+
+    $('dmbLoadingLabel').textContent = 'intentando conectar con Moxfield…';
+    $('dmbLoadingLabel').style.display = 'inline';
+    $('dmbAnalyzeBtn').disabled = true;
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 6000);
+      const res = await fetch(`https://api2.moxfield.com/v2/decks/all/${idMatch[1]}`, { signal: controller.signal });
+      clearTimeout(timeout);
+      if (!res.ok) throw new Error('respuesta no válida');
+      // If this ever succeeds (requires Moxfield's authorization), the response
+      // shape would be parsed here into the same {commanderCards, deckCards} state.
+      throw new Error('sin autorización');
+    } catch (err) {
+      fallback.style.display = 'block';
+      fallback.innerHTML = `No pudimos conectar directamente con Moxfield: todavía no tenemos acceso autorizado a su API (ver conversación con su equipo de soporte). <strong>Mientras tanto</strong>, exportá tu mazo desde Moxfield (Formato Moxfield o Texto plano) y pegalo en la pestaña correspondiente.
+        <div style="margin-top:10px;"><span class="dmb-link-action" id="dmbGoToPaste">Ir a pegar texto →</span></div>`;
+      document.getElementById('dmbGoToPaste')?.addEventListener('click', () => {
+        document.querySelector('.dmb-tab[data-tab="moxfield"]').click();
+      });
+    } finally {
+      $('dmbLoadingLabel').style.display = 'none';
+      $('dmbLoadingLabel').textContent = 'validando cartas con Scryfall…';
+      $('dmbAnalyzeBtn').disabled = false;
+    }
+  }
+
+  $('dmbAnalyzeBtn').addEventListener('click', analyze);
+  $('dmbTextarea').value = SAMPLES.moxfield;
+})();
+</script>
