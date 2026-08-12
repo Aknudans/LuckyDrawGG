@@ -1,0 +1,68 @@
+// Reglas de Firestore recomendadas para LuckyDrawGG.
+// Pegar en Firebase Console → Firestore Database → Reglas → Publicar.
+//
+// Modelo de datos:
+//   /usuarios/{uid}                        -> { tipo: 'individual' | 'tienda', email: string, direccion?: string, creado: timestamp }
+//   /torneos/{codigo}                      -> { estado: 'abierto' | 'cerrado', creado: timestamp, organizadorUid: string, pods?: { jugadores: string[] }[], timer?: { totalSeconds: number, remainingSeconds: number, endsAtMillis: number|null, running: boolean } }
+//   /torneos/{codigo}/participantes/{id}   -> { nombre: string, unidoEn: timestamp }
+//
+// "usuarios" guarda el perfil de quien organiza torneos (requiere cuenta vía
+// Firebase Authentication). "direccion" solo se exige si tipo == 'tienda'.
+// Cada usuario solo puede leer/crear su propio documento.
+//
+// "pods" es la lista de pods ya armados; cada pod es un mapa { jugadores: [...] }
+// en vez de un array suelto porque Firestore no admite arrays anidados dentro
+// de un array. El organizador la escribe al cerrar inscripciones y puede
+// volver a escribirla al re-sortear; los participantes solo la leen para ver
+// con quiénes les toca jugar.
+//
+// "timer" sincroniza el temporizador de ronda con cada participante. Se
+// guarda un ancla (endsAtMillis) en vez de descontar segundo a segundo, para
+// que cada dispositivo calcule el tiempo restante con su propio reloj.
+//
+// Crear un torneo requiere estar autenticado (organizadorUid == el propio uid).
+// Solo quien lo creó puede actualizarlo (cerrar inscripciones / re-sortear).
+// Cualquiera con el código puede leer la sala y sumarse como participante sin
+// cuenta (como Kahoot). Nadie puede editar ni borrar participantes ya
+// cargados, ni leer/escribir salas o perfiles ajenos fuera de este esquema.
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /usuarios/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid
+                    && request.resource.data.keys().hasOnly(['tipo', 'email', 'direccion', 'creado'])
+                    && request.resource.data.tipo in ['individual', 'tienda']
+                    && (request.resource.data.tipo == 'individual' || (
+                         request.resource.data.direccion is string
+                         && request.resource.data.direccion.size() > 0
+                       ));
+      allow update, delete: if false;
+    }
+
+    match /torneos/{torneoId} {
+      allow read: if true;
+      allow create: if request.auth != null
+                    && request.resource.data.keys().hasOnly(['estado', 'creado', 'organizadorUid'])
+                    && request.resource.data.estado == 'abierto'
+                    && request.resource.data.organizadorUid == request.auth.uid;
+      allow update: if request.auth != null
+                    && request.auth.uid == resource.data.organizadorUid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'pods', 'timer'])
+                    && request.resource.data.estado in ['abierto', 'cerrado'];
+      allow delete: if false;
+
+      match /participantes/{participanteId} {
+        allow read: if true;
+        allow create: if request.resource.data.keys().hasOnly(['nombre', 'unidoEn'])
+                      && request.resource.data.nombre is string
+                      && request.resource.data.nombre.size() > 0
+                      && request.resource.data.nombre.size() <= 40
+                      && get(/databases/$(database)/documents/torneos/$(torneoId)).data.estado == 'abierto';
+        allow update, delete: if false;
+      }
+    }
+  }
+}

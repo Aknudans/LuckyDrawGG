@@ -269,12 +269,12 @@
 
 <div class="dmb-app" id="dmbApp">
   <div class="dmb-eyebrow">Módulo · Armar mazo</div>
-  <h1 class="dmb-title">Registrá tu mazo de Commander</h1>
+  <h1 class="dmb-title">Registra tu mazo de Commander</h1>
 
   <div class="dmb-tabs">
     <div class="dmb-tab active" data-tab="moxfield">Formato Moxfield</div>
     <div class="dmb-tab" data-tab="plaintext">Texto plano</div>
-    <div class="dmb-tab" data-tab="link">Link de Moxfield</div>
+    <div class="dmb-tab" data-tab="link">Enlace de Moxfield</div>
   </div>
 
   <div id="dmbHint" class="dmb-hint"></div>
@@ -319,9 +319,9 @@
   const $ = (id) => document.getElementById(id);
 
   const HINTS = {
-    moxfield: 'Exportá tu mazo desde Moxfield con la opción "Formato Moxfield" (incluye edición y número de coleccionista, y separa la sección "Commander" del resto). Pegá el resultado tal cual.',
-    plaintext: 'Exportá o escribí tu lista en texto plano: "cantidad + nombre" por línea, sin edición. La última línea de la lista se toma como comandante.',
-    link: 'Pegá el link público de tu mazo en Moxfield. Nota: Moxfield todavía no nos dio acceso autorizado a su API — si la importación directa falla, te ofrecemos el paso siguiente para pegar el texto en su lugar.',
+    moxfield: 'Exporta tu mazo desde Moxfield con la opción "Formato Moxfield" (incluye edición y número de coleccionista, y separa la sección "Commander" del resto). Pega el resultado tal cual.',
+    plaintext: 'Exporta o escribe tu lista en texto plano: "cantidad + nombre" por línea, sin edición. La última línea de la lista se toma como comandante.',
+    link: 'Pega el enlace público de tu mazo en Moxfield. Nota: Moxfield todavía no nos dio acceso autorizado a su API — si la importación directa falla, te ofrecemos el paso siguiente para pegar el texto en su lugar.',
   };
 
   const SAMPLES = {
@@ -542,7 +542,7 @@ Deck
       const img = card?.image_uris?.art_crop || card?.card_faces?.[0]?.image_uris?.art_crop || '';
       const typeLine = card?.type_line || (card ? '' : 'Sin validar todavía');
       const legalWarning = card && !(/legendary/i.test(typeLine) && (/creature/i.test(typeLine) || /planeswalker/i.test(typeLine)))
-        ? `<div style="color:var(--danger); font-size:11.5px; margin-top:4px;">⚠ El tipo de carta no es el típico de un comandante — confirmá que sea correcto.</div>` : '';
+        ? `<div style="color:var(--danger); font-size:11.5px; margin-top:4px;">⚠ El tipo de carta no es el típico de un comandante — confirma que sea correcto.</div>` : '';
       return `
         <div class="dmb-commander-card" style="margin-bottom:8px;">
           ${img ? `<img class="dmb-commander-img" src="${img}" alt="${c.name}" />` : `<div class="dmb-commander-img"></div>`}
@@ -643,7 +643,7 @@ Deck
 
     if (!idMatch) {
       fallback.style.display = 'block';
-      fallback.innerHTML = `Ese link no parece ser un mazo público de Moxfield. Revisá la URL o pegá tu lista en <strong>Formato Moxfield</strong> / <strong>Texto plano</strong>.`;
+      fallback.innerHTML = `Ese enlace no parece ser un mazo público de Moxfield. Revisa la URL o pega tu lista en <strong>Formato Moxfield</strong> / <strong>Texto plano</strong>.`;
       return;
     }
 
@@ -662,7 +662,7 @@ Deck
       throw new Error('sin autorización');
     } catch (err) {
       fallback.style.display = 'block';
-      fallback.innerHTML = `No pudimos conectar directamente con Moxfield: todavía no tenemos acceso autorizado a su API (ver conversación con su equipo de soporte). <strong>Mientras tanto</strong>, exportá tu mazo desde Moxfield (Formato Moxfield o Texto plano) y pegalo en la pestaña correspondiente.
+      fallback.innerHTML = `No pudimos conectar directamente con Moxfield: todavía no tenemos acceso autorizado a su API (ver conversación con su equipo de soporte). <strong>Mientras tanto</strong>, exporta tu mazo desde Moxfield (Formato Moxfield o Texto plano) y pégalo en la pestaña correspondiente.
         <div style="margin-top:10px;"><span class="dmb-link-action" id="dmbGoToPaste">Ir a pegar texto →</span></div>`;
       document.getElementById('dmbGoToPaste')?.addEventListener('click', () => {
         document.querySelector('.dmb-tab[data-tab="moxfield"]').click();

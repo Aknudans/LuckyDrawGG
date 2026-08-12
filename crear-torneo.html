@@ -95,7 +95,7 @@
     margin-bottom: 8px;
   }
 
-  input[type="number"], input[type="text"] {
+  input[type="number"], input[type="text"], input[type="email"], input[type="password"] {
     width: 100%;
     background: #0f1218;
     border: 1px solid var(--border);
@@ -104,7 +104,7 @@
     padding: 10px 12px;
     font-size: 0.95rem;
   }
-  input[type="number"]:focus, input[type="text"]:focus {
+  input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus {
     outline: none;
     border-color: var(--accent);
   }
@@ -201,6 +201,28 @@
 
   .hidden { display: none; }
 
+  button.secondary.active {
+    background: var(--accent);
+    color: #1a1a1a;
+    border-color: var(--accent);
+  }
+  .tab-btn, .account-type-btn { flex: 1; }
+
+  #accountBar {
+    width: 100%;
+    max-width: 780px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: -14px 0 24px;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+  }
+  #accountBar button {
+    padding: 5px 14px;
+    font-size: 0.78rem;
+  }
+
   /* Timer */
   .timer-display {
     font-size: 3.2rem;
@@ -252,29 +274,106 @@
 <h1>Crear torneo</h1>
 <div class="subtitle">Pods de 3 a 5 jugadores, nunca 1v1 ni parejas sueltas.</div>
 
-<!-- STEP 1 -->
-<div class="panel" id="step1">
-  <h2><span class="step-badge">Paso 1</span> ¿Cuántos participantes?</h2>
-  <div class="row">
-    <div class="field">
-      <label for="participantCount">Cantidad de participantes</label>
-      <input type="number" id="participantCount" min="3" placeholder="ej: 10">
-    </div>
-    <button id="generatePodsBtn">Generar pods</button>
-  </div>
-  <div class="warning" id="countWarning"></div>
-  <div class="hint">Se arman pods de 3 a 5 jugadores (ideal 4). El sobrante se reparte entre pods existentes en vez de dejar 1v1 o parejas sueltas.</div>
+<div id="accountBar" class="hidden">
+  <span id="accountEmail"></span>
+  <button class="secondary" id="logoutBtn">Cerrar sesión</button>
 </div>
 
-<!-- STEP 2 -->
-<div class="panel hidden" id="step2">
-  <h2><span class="step-badge">Paso 2</span> Cargá los nombres</h2>
-  <div id="podsGridInput" class="pods-grid"></div>
-  <div class="actions">
-    <button id="shuffleBtn">🔀 Sortear enfrentamientos</button>
-    <button class="secondary" id="editCountBtn">Cambiar cantidad</button>
+<!-- AUTENTICACIÓN: hace falta cuenta para organizar (no para unirse) -->
+<div class="panel" id="authGate">
+  <h2><span class="step-badge">Cuenta</span> Inicia sesión para crear un torneo</h2>
+  <div class="hint" style="margin-top:0;">Cualquiera puede unirse a un torneo sin cuenta. Para organizar uno, necesitas iniciar sesión.</div>
+
+  <div class="row" style="gap:6px; margin: 16px 0 20px;">
+    <button class="secondary tab-btn active" id="authTabLogin" type="button">Iniciar sesión</button>
+    <button class="secondary tab-btn" id="authTabRegister" type="button">Crear cuenta</button>
   </div>
-  <div class="hint">El orden en que cargues los nombres no importa: al sortear se redistribuyen al azar entre los pods, respetando el tamaño de cada uno.</div>
+
+  <div id="loginForm">
+    <label for="loginEmail">Correo electrónico</label>
+    <input type="email" id="loginEmail" autocomplete="username">
+    <label for="loginPassword" style="margin-top:12px;">Contraseña</label>
+    <input type="password" id="loginPassword" autocomplete="current-password">
+    <div class="actions">
+      <button id="loginBtn">Iniciar sesión</button>
+    </div>
+  </div>
+
+  <div id="registerForm" class="hidden">
+    <label for="registerEmail">Correo electrónico</label>
+    <input type="email" id="registerEmail" autocomplete="username">
+    <label for="registerPassword" style="margin-top:12px;">Contraseña</label>
+    <input type="password" id="registerPassword" autocomplete="new-password">
+
+    <label style="margin-top:12px;">Tipo de cuenta</label>
+    <div class="row" style="gap:6px;">
+      <button type="button" class="secondary account-type-btn" data-type="individual">Individual</button>
+      <button type="button" class="secondary account-type-btn" data-type="tienda">Tienda</button>
+    </div>
+
+    <div id="tiendaFields" class="hidden">
+      <label for="registerAddress" style="margin-top:12px;">Dirección de la tienda</label>
+      <input type="text" id="registerAddress" placeholder="Calle, número, ciudad">
+      <div class="hint">La usamos para futuras funciones (por ejemplo, que jugadores cercanos encuentren torneos de tu tienda).</div>
+    </div>
+
+    <div class="actions">
+      <button id="registerBtn">Crear cuenta</button>
+    </div>
+  </div>
+
+  <div class="warning" id="authWarning"></div>
+</div>
+
+<!-- STEP 1: SALA DE ESPERA -->
+<div class="panel hidden" id="step1">
+  <h2><span class="step-badge">Sala</span> Sala de espera</h2>
+
+  <div id="roomCreate">
+    <div class="hint" style="margin-top:0;">Crea una sala para que los participantes se sumen desde su celular escaneando un QR o entrando a un enlace — no hace falta que cargues los nombres a mano.</div>
+    <button id="createRoomBtn">Crear sala de espera</button>
+  </div>
+
+  <div id="roomActive" class="hidden">
+    <div class="row" style="align-items:stretch;">
+      <div class="field" style="text-align:center;">
+        <label>Código de sala</label>
+        <div id="roomCode" style="font-size:1.8rem; font-weight:800; letter-spacing:0.12em; color:var(--accent);"></div>
+      </div>
+      <div class="field" style="text-align:center;">
+        <label>QR para escanear</label>
+        <img id="roomQr" alt="QR de la sala" style="width:150px; height:150px; border-radius:8px; border:1px solid var(--border); background:#fff; padding:6px;">
+      </div>
+    </div>
+
+    <label style="margin-top:16px;">Enlace para compartir</label>
+    <div class="row" style="align-items:center;">
+      <div class="field">
+        <input type="text" id="roomLink" readonly>
+      </div>
+      <button class="secondary" id="copyLinkBtn">Copiar</button>
+    </div>
+
+    <div class="hint" id="copyHint"></div>
+
+    <h2 style="margin-top:26px;"><span class="step-badge" id="rosterCount">0</span> Participantes anotados</h2>
+    <div id="rosterList" class="hint" style="margin-top:0;">Todavía no se sumó nadie.</div>
+
+    <div class="row" style="margin-top:16px;">
+      <div class="field">
+        <label for="manualNameInput">Agregar manualmente (sin celular)</label>
+        <input type="text" id="manualNameInput" placeholder="Nombre del jugador">
+      </div>
+      <button class="secondary" id="addManualBtn">Agregar</button>
+    </div>
+
+    <div class="warning" id="countWarning"></div>
+
+    <div class="actions">
+      <button id="closeRoomBtn" disabled>🔀 Cerrar inscripciones y sortear pods</button>
+    </div>
+    <div class="hint">Se necesitan al menos 3 participantes. Al cerrar, se arman pods de 3 a 5 jugadores (ideal 4) y se sortean los enfrentamientos al azar.</div>
+  </div>
 </div>
 
 <!-- STEP 3 -->
@@ -302,8 +401,18 @@
   <div class="hint" id="timerHint" style="text-align:center; margin-top:14px;"></div>
 </div>
 
-<script>
-(function () {
+<script type="module">
+  import { firebaseConfig } from './firebase-config.js';
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+  import {
+    getFirestore, doc, setDoc, updateDoc, addDoc, collection,
+    onSnapshot, orderBy, query, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+  import {
+    getAuth, onAuthStateChanged, createUserWithEmailAndPassword,
+    signInWithEmailAndPassword, signOut
+  } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+
   // ---------- Pod distribution ----------
   function distributePods(n) {
     if (n < 3) return null;
@@ -340,88 +449,338 @@
   }
 
   let podSizes = [];
+  let lastRosterNames = [];
 
-  // ---------- Step 1 ----------
-  const participantCount = document.getElementById('participantCount');
-  const generatePodsBtn = document.getElementById('generatePodsBtn');
+  // Firestore no admite arrays anidados (array dentro de array), así que
+  // cada pod se guarda como un mapa { jugadores: [...] } en vez de un array
+  // suelto de nombres.
+  function buildPodsArray(sizes, names) {
+    const pods = [];
+    let cursor = 0;
+    sizes.forEach((size) => {
+      pods.push({ jugadores: names.slice(cursor, cursor + size) });
+      cursor += size;
+    });
+    return pods;
+  }
+
   const countWarning = document.getElementById('countWarning');
   const step1 = document.getElementById('step1');
-  const step2 = document.getElementById('step2');
   const step3 = document.getElementById('step3');
   const timerPanel = document.getElementById('timerPanel');
-  const podsGridInput = document.getElementById('podsGridInput');
   const podsGridResult = document.getElementById('podsGridResult');
 
-  generatePodsBtn.addEventListener('click', () => {
-    const n = parseInt(participantCount.value, 10);
+  // ---------- Sala de espera (Firebase) ----------
+  const roomCreate = document.getElementById('roomCreate');
+  const roomActive = document.getElementById('roomActive');
+  const createRoomBtn = document.getElementById('createRoomBtn');
+  const roomCodeEl = document.getElementById('roomCode');
+  const roomQr = document.getElementById('roomQr');
+  const roomLink = document.getElementById('roomLink');
+  const copyLinkBtn = document.getElementById('copyLinkBtn');
+  const copyHint = document.getElementById('copyHint');
+  const rosterCount = document.getElementById('rosterCount');
+  const rosterList = document.getElementById('rosterList');
+  const manualNameInput = document.getElementById('manualNameInput');
+  const addManualBtn = document.getElementById('addManualBtn');
+  const closeRoomBtn = document.getElementById('closeRoomBtn');
+
+  let roomCode = null, unsubscribe = null;
+
+  // ---------- Autenticación ----------
+  const authGate = document.getElementById('authGate');
+  const accountBar = document.getElementById('accountBar');
+  const accountEmail = document.getElementById('accountEmail');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const authTabLogin = document.getElementById('authTabLogin');
+  const authTabRegister = document.getElementById('authTabRegister');
+  const loginForm = document.getElementById('loginForm');
+  const registerForm = document.getElementById('registerForm');
+  const loginEmail = document.getElementById('loginEmail');
+  const loginPassword = document.getElementById('loginPassword');
+  const loginBtn = document.getElementById('loginBtn');
+  const registerEmail = document.getElementById('registerEmail');
+  const registerPassword = document.getElementById('registerPassword');
+  const registerBtn = document.getElementById('registerBtn');
+  const registerAddress = document.getElementById('registerAddress');
+  const tiendaFields = document.getElementById('tiendaFields');
+  const accountTypeBtns = document.querySelectorAll('.account-type-btn');
+  const authWarning = document.getElementById('authWarning');
+
+  let currentUser = null;
+  let selectedAccountType = null;
+
+  function showAuthWarning(msg) {
+    authWarning.textContent = msg;
+    authWarning.classList.add('show');
+  }
+  function clearAuthWarning() {
+    authWarning.classList.remove('show');
+  }
+
+  function traducirErrorAuth(code) {
+    const mensajes = {
+      'auth/invalid-email': 'El correo electrónico no es válido.',
+      'auth/email-already-in-use': 'Ya existe una cuenta con ese correo. Intenta iniciar sesión.',
+      'auth/weak-password': 'La contraseña es demasiado débil (mínimo 6 caracteres).',
+      'auth/user-not-found': 'No encontramos una cuenta con ese correo.',
+      'auth/wrong-password': 'La contraseña es incorrecta.',
+      'auth/invalid-credential': 'Correo o contraseña incorrectos.',
+      'auth/too-many-requests': 'Demasiados intentos. Espera unos minutos e intenta de nuevo.',
+    };
+    return mensajes[code] || 'Ocurrió un error. Intenta de nuevo.';
+  }
+
+  function showLoginTab() {
+    authTabLogin.classList.add('active');
+    authTabRegister.classList.remove('active');
+    loginForm.classList.remove('hidden');
+    registerForm.classList.add('hidden');
+    clearAuthWarning();
+  }
+  function showRegisterTab() {
+    authTabRegister.classList.add('active');
+    authTabLogin.classList.remove('active');
+    registerForm.classList.remove('hidden');
+    loginForm.classList.add('hidden');
+    clearAuthWarning();
+  }
+  authTabLogin.addEventListener('click', showLoginTab);
+  authTabRegister.addEventListener('click', showRegisterTab);
+
+  accountTypeBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      selectedAccountType = btn.dataset.type;
+      accountTypeBtns.forEach((b) => b.classList.toggle('active', b === btn));
+      tiendaFields.classList.toggle('hidden', selectedAccountType !== 'tienda');
+    });
+  });
+
+  function firebaseReady() {
+    if (firebaseConfig.apiKey === 'TU_API_KEY') {
+      showAuthWarning('Falta configurar Firebase en firebase-config.js — no se puede iniciar sesión ni crear salas.');
+      loginBtn.disabled = true;
+      registerBtn.disabled = true;
+      return false;
+    }
+    return true;
+  }
+
+  function generateCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    return code;
+  }
+
+  let app = null, db = null, auth = null;
+
+  if (firebaseReady()) {
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    auth = getAuth(app);
+
+    onAuthStateChanged(auth, (user) => {
+      currentUser = user;
+      if (user) {
+        authGate.classList.add('hidden');
+        step1.classList.remove('hidden');
+        accountBar.classList.remove('hidden');
+        accountEmail.textContent = user.email;
+      } else {
+        authGate.classList.remove('hidden');
+        step1.classList.add('hidden');
+        accountBar.classList.add('hidden');
+      }
+    });
+  }
+
+  loginBtn.addEventListener('click', async () => {
+    const email = loginEmail.value.trim();
+    const password = loginPassword.value;
+    clearAuthWarning();
+
+    if (!email || !password) { showAuthWarning('Completa el correo y la contraseña.'); return; }
+
+    loginBtn.disabled = true;
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (err) {
+      showAuthWarning(traducirErrorAuth(err.code));
+    } finally {
+      loginBtn.disabled = false;
+    }
+  });
+  loginPassword.addEventListener('keydown', (e) => { if (e.key === 'Enter') loginBtn.click(); });
+
+  registerBtn.addEventListener('click', async () => {
+    const email = registerEmail.value.trim();
+    const password = registerPassword.value;
+    const direccion = registerAddress.value.trim();
+    clearAuthWarning();
+
+    if (!email || !password) { showAuthWarning('Completa el correo y la contraseña.'); return; }
+    if (password.length < 6) { showAuthWarning('La contraseña debe tener al menos 6 caracteres.'); return; }
+    if (!selectedAccountType) { showAuthWarning('Selecciona si la cuenta es individual o de una tienda.'); return; }
+    if (selectedAccountType === 'tienda' && !direccion) { showAuthWarning('Ingresa la dirección de la tienda.'); return; }
+
+    registerBtn.disabled = true;
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      const perfil = { tipo: selectedAccountType, email, creado: serverTimestamp() };
+      if (selectedAccountType === 'tienda') perfil.direccion = direccion;
+      await setDoc(doc(db, 'usuarios', cred.user.uid), perfil);
+    } catch (err) {
+      showAuthWarning(traducirErrorAuth(err.code));
+      registerBtn.disabled = false;
+    }
+  });
+  registerAddress.addEventListener('keydown', (e) => { if (e.key === 'Enter') registerBtn.click(); });
+
+  logoutBtn.addEventListener('click', async () => {
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    await signOut(auth);
+    roomCode = null;
+    roomCreate.classList.remove('hidden');
+    roomActive.classList.add('hidden');
+    step3.classList.add('hidden');
+    timerPanel.classList.add('hidden');
+  });
+
+  createRoomBtn.addEventListener('click', async () => {
+    if (!currentUser) return;
+    createRoomBtn.disabled = true;
     countWarning.classList.remove('show');
 
-    if (!n || n < 3) {
+    try {
+      roomCode = generateCode();
+
+      await setDoc(doc(db, 'torneos', roomCode), {
+        estado: 'abierto',
+        creado: serverTimestamp(),
+        organizadorUid: currentUser.uid,
+      });
+
+      const joinUrl = new URL('unirse.html', location.href);
+      joinUrl.searchParams.set('code', roomCode);
+
+      roomCodeEl.textContent = roomCode;
+      roomLink.value = joinUrl.toString();
+      roomQr.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(joinUrl.toString())}`;
+
+      roomCreate.classList.add('hidden');
+      roomActive.classList.remove('hidden');
+
+      const q = query(collection(db, 'torneos', roomCode, 'participantes'), orderBy('unidoEn', 'asc'));
+      unsubscribe = onSnapshot(q, (snap) => {
+        lastRosterNames = snap.docs.map(d => d.data().nombre);
+        renderRoster(lastRosterNames);
+      }, (err) => {
+        countWarning.textContent = 'Se perdió la conexión con la sala. Verifica tu conexión a internet; la lista se va a actualizar sola en cuanto se reconecte.';
+        countWarning.classList.add('show');
+      });
+    } catch (err) {
+      countWarning.textContent = 'No pudimos crear la sala. Verifica tu conexión a internet y vuelve a intentarlo.';
+      countWarning.classList.add('show');
+      createRoomBtn.disabled = false;
+    }
+  });
+
+  function renderRoster(names) {
+    rosterCount.textContent = String(names.length);
+    rosterList.innerHTML = names.length
+      ? names.map(n => `<span class="pod-card" style="display:inline-block; padding:6px 12px; margin:0 6px 6px 0;">${n}</span>`).join('')
+      : 'Todavía no se sumó nadie.';
+    closeRoomBtn.disabled = names.length < 3;
+  }
+
+  copyLinkBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(roomLink.value);
+      copyHint.textContent = 'Enlace copiado.';
+    } catch (e) {
+      roomLink.select();
+      copyHint.textContent = 'Selecciona y copia el enlace manualmente.';
+    }
+  });
+
+  addManualBtn.addEventListener('click', async () => {
+    const name = manualNameInput.value.trim();
+    if (!name || !db || !roomCode) return;
+
+    addManualBtn.disabled = true;
+    countWarning.classList.remove('show');
+
+    try {
+      await addDoc(collection(db, 'torneos', roomCode, 'participantes'), {
+        nombre: name,
+        unidoEn: serverTimestamp(),
+      });
+      manualNameInput.value = '';
+    } catch (err) {
+      countWarning.textContent = `No pudimos agregar a "${name}". Verifica tu conexión a internet e intenta de nuevo.`;
+      countWarning.classList.add('show');
+    } finally {
+      addManualBtn.disabled = false;
+    }
+  });
+  manualNameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') addManualBtn.click();
+  });
+
+  closeRoomBtn.addEventListener('click', async () => {
+    const n = lastRosterNames.length;
+    countWarning.classList.remove('show');
+
+    if (n < 3) {
       countWarning.textContent = 'Se necesitan al menos 3 participantes para armar un pod de Commander.';
       countWarning.classList.add('show');
       return;
     }
 
-    podSizes = distributePods(n);
-    renderInputPods(podSizes);
-    step2.classList.remove('hidden');
-    step3.classList.add('hidden');
-    timerPanel.classList.add('hidden');
-    step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
+    closeRoomBtn.disabled = true;
 
-  document.getElementById('editCountBtn').addEventListener('click', () => {
-    step2.classList.add('hidden');
-    step1.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
+    try {
+      podSizes = distributePods(n);
+      const shuffled = shuffle(lastRosterNames);
+      const pods = buildPodsArray(podSizes, shuffled);
 
-  function renderInputPods(sizes) {
-    podsGridInput.innerHTML = '';
-    sizes.forEach((size, podIndex) => {
-      const card = document.createElement('div');
-      card.className = 'pod-card';
-      const title = document.createElement('h3');
-      title.innerHTML = `<span>Pod ${podIndex + 1}</span><span>${size} jugadores</span>`;
-      card.appendChild(title);
-      for (let i = 0; i < size; i++) {
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.placeholder = `Jugador ${i + 1}`;
-        input.className = 'player-name-input';
-        card.appendChild(input);
+      if (db && roomCode) {
+        await updateDoc(doc(db, 'torneos', roomCode), { estado: 'cerrado', pods });
       }
-      podsGridInput.appendChild(card);
-    });
-  }
+      if (unsubscribe) unsubscribe();
 
-  // ---------- Step 2 -> Shuffle ----------
-  document.getElementById('shuffleBtn').addEventListener('click', () => {
-    const names = Array.from(document.querySelectorAll('.player-name-input'))
-      .map(inp => inp.value.trim())
-      .filter(v => v.length > 0);
+      renderResultPods(podSizes, shuffled);
 
-    const total = podSizes.reduce((a, b) => a + b, 0);
-    if (names.length !== total) {
-      countWarning.textContent = `Cargaste ${names.length} nombre(s) pero se esperaban ${total}. Completá todos los casilleros.`;
+      step3.classList.remove('hidden');
+      timerPanel.classList.remove('hidden');
+      step3.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (err) {
+      countWarning.textContent = 'No pudimos cerrar las inscripciones. Verifica tu conexión a internet e intenta de nuevo.';
       countWarning.classList.add('show');
-      step2.scrollIntoView({ behavior: 'smooth' });
-      return;
+      closeRoomBtn.disabled = false;
     }
+  });
+
+  const reshuffleBtn = document.getElementById('reshuffleBtn');
+  reshuffleBtn.addEventListener('click', async () => {
+    reshuffleBtn.disabled = true;
     countWarning.classList.remove('show');
 
-    const shuffled = shuffle(names);
-    renderResultPods(podSizes, shuffled);
+    try {
+      const shuffled = shuffle(lastRosterNames);
+      const pods = buildPodsArray(podSizes, shuffled);
 
-    step3.classList.remove('hidden');
-    timerPanel.classList.remove('hidden');
-    step3.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
-
-  document.getElementById('reshuffleBtn').addEventListener('click', () => {
-    const names = Array.from(document.querySelectorAll('#podsGridResult .player-line'))
-      .map(el => el.textContent);
-    const shuffled = shuffle(names);
-    renderResultPods(podSizes, shuffled);
+      if (db && roomCode) {
+        await updateDoc(doc(db, 'torneos', roomCode), { pods });
+      }
+      renderResultPods(podSizes, shuffled);
+    } catch (err) {
+      countWarning.textContent = 'No pudimos actualizar los pods de los participantes. Verifica tu conexión a internet e intenta de nuevo.';
+      countWarning.classList.add('show');
+    } finally {
+      reshuffleBtn.disabled = false;
+    }
   });
 
   function renderResultPods(sizes, names) {
@@ -445,6 +804,13 @@
   }
 
   // ---------- Timer ----------
+  // El estado del timer se guarda en Firestore (torneos/{code}.timer) para que
+  // cada participante lo vea en su celular. En vez de descontar segundo a
+  // segundo, se guarda un "ancla" (endsAtMillis: el instante en que llega a
+  // cero) y cada dispositivo recalcula localmente cuánto falta comparando con
+  // su propio reloj — así no depende de mantener un setInterval sincronizado
+  // entre el organizador y cada participante, y no se atrasa si la pestaña
+  // queda en segundo plano.
   const timerMinutesInput = document.getElementById('timerMinutes');
   const applyTimerBtn = document.getElementById('applyTimerBtn');
   const timerDisplay = document.getElementById('timerDisplay');
@@ -452,10 +818,7 @@
   const resetTimerBtn = document.getElementById('resetTimerBtn');
   const timerHint = document.getElementById('timerHint');
 
-  let totalSeconds = 50 * 60;
-  let remainingSeconds = totalSeconds;
-  let timerInterval = null;
-  let running = false;
+  let timerState = { totalSeconds: 50 * 60, remainingSeconds: 50 * 60, endsAtMillis: null, running: false };
 
   function formatTime(s) {
     const m = Math.floor(Math.abs(s) / 60).toString().padStart(2, '0');
@@ -463,56 +826,64 @@
     return (s < 0 ? '-' : '') + `${m}:${sec}`;
   }
 
+  function currentRemaining() {
+    if (timerState.running && timerState.endsAtMillis) {
+      return Math.round((timerState.endsAtMillis - Date.now()) / 1000);
+    }
+    return timerState.remainingSeconds;
+  }
+
   function renderTimer() {
-    timerDisplay.textContent = formatTime(remainingSeconds);
+    const remaining = currentRemaining();
+    timerDisplay.textContent = formatTime(remaining);
     timerDisplay.classList.remove('warn', 'danger');
-    if (remainingSeconds <= 0) {
+    if (remaining <= 0) {
       timerDisplay.classList.add('danger');
       timerHint.textContent = '¡Tiempo de ronda cumplido! Definir por vida restante / daño de comandante según reglas del torneo.';
-    } else if (remainingSeconds <= 300) {
+    } else if (remaining <= 300) {
       timerDisplay.classList.add('warn');
       timerHint.textContent = 'Últimos 5 minutos de ronda.';
     } else {
       timerHint.textContent = '';
     }
+    startPauseBtn.textContent = timerState.running ? '⏸️ Pausar' : '▶️ Iniciar';
   }
 
-  applyTimerBtn.addEventListener('click', () => {
+  async function persistTimer() {
+    if (!db || !roomCode) return;
+    try {
+      await updateDoc(doc(db, 'torneos', roomCode), { timer: { ...timerState } });
+    } catch (err) {
+      timerHint.textContent = 'No pudimos sincronizar el tiempo con los participantes (sigue corriendo solo en esta pantalla).';
+    }
+  }
+
+  applyTimerBtn.addEventListener('click', async () => {
     const mins = parseInt(timerMinutesInput.value, 10);
     if (!mins || mins < 1) return;
-    totalSeconds = mins * 60;
-    remainingSeconds = totalSeconds;
-    stopTimer();
+    timerState = { totalSeconds: mins * 60, remainingSeconds: mins * 60, endsAtMillis: null, running: false };
     renderTimer();
+    await persistTimer();
   });
 
-  function stopTimer() {
-    running = false;
-    clearInterval(timerInterval);
-    startPauseBtn.textContent = '▶️ Iniciar';
-  }
-
-  startPauseBtn.addEventListener('click', () => {
-    if (running) {
-      stopTimer();
+  startPauseBtn.addEventListener('click', async () => {
+    if (timerState.running) {
+      timerState = { ...timerState, remainingSeconds: currentRemaining(), endsAtMillis: null, running: false };
     } else {
-      running = true;
-      startPauseBtn.textContent = '⏸️ Pausar';
-      timerInterval = setInterval(() => {
-        remainingSeconds--;
-        renderTimer();
-      }, 1000);
+      timerState = { ...timerState, endsAtMillis: Date.now() + timerState.remainingSeconds * 1000, running: true };
     }
-  });
-
-  resetTimerBtn.addEventListener('click', () => {
-    stopTimer();
-    remainingSeconds = totalSeconds;
     renderTimer();
+    await persistTimer();
   });
 
+  resetTimerBtn.addEventListener('click', async () => {
+    timerState = { ...timerState, remainingSeconds: timerState.totalSeconds, endsAtMillis: null, running: false };
+    renderTimer();
+    await persistTimer();
+  });
+
+  setInterval(renderTimer, 1000);
   renderTimer();
-})();
 </script>
 
 </body>

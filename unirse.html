@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unirme al torneo</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --bg-card: #171a21;
+    --border: #2a2f3a;
+    --text: #eef0f4;
+    --text-dim: #9aa1ad;
+    --accent: #c9a227;
+    --accent-soft: rgba(201, 162, 39, 0.15);
+    --danger: #d9534f;
+    --danger-soft: rgba(217, 83, 79, 0.15);
+    --ok: #4caf7d;
+    --ok-soft: rgba(76, 175, 125, 0.15);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(circle at 50% 0%, #191d26 0%, var(--bg) 60%);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 20px 80px;
+  }
+
+  .panel {
+    width: 100%;
+    max-width: 400px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    text-align: center;
+  }
+
+  h1 {
+    font-size: 1.4rem;
+    margin: 0 0 6px;
+  }
+
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 0.88rem;
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+
+  label {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    margin: 14px 0 6px;
+    text-align: left;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    background: #0f1218;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 12px 14px;
+    font-size: 1rem;
+    text-align: center;
+  }
+  input[type="text"]:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  #codeInput { text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; }
+
+  button {
+    width: 100%;
+    background: var(--accent);
+    color: #1a1a1a;
+    border: none;
+    border-radius: 8px;
+    padding: 13px 18px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: opacity 0.15s;
+  }
+  button:hover { opacity: 0.88; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.back-btn {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    font-weight: 500;
+    margin-top: 10px;
+  }
+  button.back-btn:hover { color: var(--text); opacity: 1; }
+
+  .status {
+    font-size: 0.85rem;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-top: 16px;
+    display: none;
+    line-height: 1.5;
+  }
+  .status.show { display: block; }
+  .status.error { background: var(--danger-soft); color: #f2a29f; border: 1px solid rgba(217,83,79,0.4); }
+  .status.ok { background: var(--ok-soft); color: var(--ok); border: 1px solid rgba(76,175,125,0.4); }
+  .status.info { background: var(--accent-soft); color: var(--accent); border: 1px solid rgba(201,162,39,0.4); }
+
+  .back {
+    display: inline-block;
+    margin-top: 22px;
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 0.82rem;
+  }
+  .back:hover { color: var(--text); }
+
+  .hidden { display: none; }
+
+  .waiting {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0 4px;
+  }
+  .spinner {
+    width: 26px;
+    height: 26px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .pod-title {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    text-align: left;
+  }
+  .player-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: #0f1218;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+    text-align: left;
+  }
+  .player-line.me {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .me-tag {
+    font-size: 0.72rem;
+    color: var(--accent);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .timer-display {
+    font-size: 2.6rem;
+    font-weight: 800;
+    text-align: center;
+    letter-spacing: 0.03em;
+    margin: 6px 0 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .timer-display.warn { color: #e0a531; }
+  .timer-display.danger { color: var(--danger); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .timer-hint {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    text-align: center;
+    margin-bottom: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="panel">
+  <h1>🪄 Unirme al torneo</h1>
+  <div class="subtitle" id="subtitle">Ingresa el código de la sala para continuar.</div>
+
+  <div id="codeStep">
+    <label for="codeInput">Código de la sala</label>
+    <input type="text" id="codeInput" maxlength="6" placeholder="EJ: A3F9K" autocomplete="off">
+
+    <button id="checkCodeBtn">Entrar</button>
+  </div>
+
+  <div id="nameStep" class="hidden">
+    <label for="nameInput">Tu nombre</label>
+    <input type="text" id="nameInput" maxlength="40" placeholder="Ej: Juan" autocomplete="off">
+
+    <button id="joinBtn">Unirme</button>
+    <button class="back-btn" id="changeCodeBtn" type="button">&larr; Cambiar código</button>
+  </div>
+
+  <div id="resultStep" class="hidden">
+    <div id="waitingBlock" class="waiting hidden">
+      <div class="spinner"></div>
+      <div id="waitingMsg"></div>
+    </div>
+    <div id="podBlock" class="hidden">
+      <div class="pod-title" id="podTitle"></div>
+      <div id="podList"></div>
+      <div id="timerBlock" class="hidden">
+        <div class="pod-title" style="margin-top:20px;">⏱️ Tiempo de la ronda</div>
+        <div class="timer-display" id="timerDisplay"></div>
+        <div class="timer-hint" id="timerHint"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="status" id="statusBox"></div>
+</div>
+
+<a class="back" href="index.html">&larr; Volver al inicio</a>
+
+<script type="module">
+  import { firebaseConfig } from './firebase-config.js';
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+  import {
+    getFirestore, doc, getDoc, collection, addDoc, onSnapshot, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+  const subtitle = document.getElementById('subtitle');
+  const codeStep = document.getElementById('codeStep');
+  const codeInput = document.getElementById('codeInput');
+  const checkCodeBtn = document.getElementById('checkCodeBtn');
+  const nameStep = document.getElementById('nameStep');
+  const nameInput = document.getElementById('nameInput');
+  const joinBtn = document.getElementById('joinBtn');
+  const changeCodeBtn = document.getElementById('changeCodeBtn');
+  const statusBox = document.getElementById('statusBox');
+  const resultStep = document.getElementById('resultStep');
+  const waitingBlock = document.getElementById('waitingBlock');
+  const waitingMsg = document.getElementById('waitingMsg');
+  const podBlock = document.getElementById('podBlock');
+  const podTitle = document.getElementById('podTitle');
+  const podList = document.getElementById('podList');
+  const timerBlock = document.getElementById('timerBlock');
+  const timerDisplay = document.getElementById('timerDisplay');
+  const timerHint = document.getElementById('timerHint');
+
+  function showStatus(kind, msg) {
+    statusBox.className = `status show ${kind}`;
+    statusBox.textContent = msg;
+  }
+  function clearStatus() {
+    statusBox.className = 'status';
+    statusBox.textContent = '';
+  }
+
+  const params = new URLSearchParams(location.search);
+  const prefillCode = (params.get('code') || '').trim().toUpperCase();
+  if (prefillCode) codeInput.value = prefillCode;
+
+  if (firebaseConfig.apiKey === 'TU_API_KEY') {
+    checkCodeBtn.disabled = true;
+    showStatus('error', 'Esta página todavía no tiene configurado Firebase (firebase-config.js). Avísale al organizador.');
+  }
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const STORAGE_PREFIX = 'ld_joined_';
+  let validatedCode = null;
+  let roomUnsub = null;
+
+  // ---------- Paso 3: esperar / mostrar el pod en vivo ----------
+  function watchRoom(code, myName) {
+    if (roomUnsub) roomUnsub();
+
+    codeStep.classList.add('hidden');
+    nameStep.classList.add('hidden');
+    resultStep.classList.remove('hidden');
+    subtitle.textContent = '';
+    clearStatus();
+
+    const roomRef = doc(db, 'torneos', code);
+    roomUnsub = onSnapshot(roomRef, (snap) => {
+      if (!snap.exists()) return;
+      renderRoomState(snap.data(), myName);
+    }, () => {
+      showStatus('error', 'Se perdió la conexión con la sala. Esto se va a actualizar solo en cuanto vuelva la señal.');
+    });
+  }
+
+  function renderRoomState(data, myName) {
+    if (!data.pods) {
+      subtitle.textContent = '';
+      waitingBlock.classList.remove('hidden');
+      podBlock.classList.add('hidden');
+      waitingMsg.textContent = `Ya estás anotado como "${myName}". Espera a que el organizador cierre las inscripciones y arme los pods.`;
+      return;
+    }
+
+    waitingBlock.classList.add('hidden');
+    podBlock.classList.remove('hidden');
+
+    const myPodEntry = data.pods.find((pod) => pod.jugadores.includes(myName));
+
+    if (!myPodEntry) {
+      podTitle.textContent = '';
+      podList.innerHTML = `<div class="status show error">No pudimos encontrar tu nombre en ningún pod. Consulta con el organizador.</div>`;
+      return;
+    }
+
+    const myPod = myPodEntry.jugadores;
+    podTitle.textContent = `Tu pod (${myPod.length} jugadores)`;
+    podList.innerHTML = myPod.map((n) => {
+      const isMe = n === myName;
+      return `<div class="player-line${isMe ? ' me' : ''}"><span>${n}</span>${isMe ? '<span class="me-tag">Tú</span>' : ''}</div>`;
+    }).join('');
+
+    lastTimerState = data.timer || null;
+    renderTimerDisplay();
+  }
+
+  // ---------- Temporizador de ronda (sincronizado con el organizador) ----------
+  let lastTimerState = null;
+
+  function formatTime(s) {
+    const m = Math.floor(Math.abs(s) / 60).toString().padStart(2, '0');
+    const sec = Math.abs(s % 60).toString().padStart(2, '0');
+    return (s < 0 ? '-' : '') + `${m}:${sec}`;
+  }
+
+  function renderTimerDisplay() {
+    if (!lastTimerState) {
+      timerBlock.classList.add('hidden');
+      return;
+    }
+    timerBlock.classList.remove('hidden');
+
+    const remaining = lastTimerState.running && lastTimerState.endsAtMillis
+      ? Math.round((lastTimerState.endsAtMillis - Date.now()) / 1000)
+      : lastTimerState.remainingSeconds;
+
+    timerDisplay.textContent = formatTime(remaining);
+    timerDisplay.classList.remove('warn', 'danger');
+
+    if (remaining <= 0) {
+      timerDisplay.classList.add('danger');
+      timerHint.textContent = '¡Tiempo de ronda cumplido!';
+    } else if (remaining <= 300) {
+      timerDisplay.classList.add('warn');
+      timerHint.textContent = 'Últimos 5 minutos de ronda.';
+    } else {
+      timerHint.textContent = lastTimerState.running ? '' : 'El organizador todavía no inició el tiempo.';
+    }
+  }
+
+  setInterval(renderTimerDisplay, 1000);
+
+  // ---------- Paso 1: validar el código de sala ----------
+  async function checkCode() {
+    const code = codeInput.value.trim().toUpperCase();
+    clearStatus();
+
+    if (!code) { showStatus('error', 'Ingresa el código de la sala.'); return; }
+
+    checkCodeBtn.disabled = true;
+    showStatus('info', 'Buscando la sala…');
+
+    try {
+      const roomRef = doc(db, 'torneos', code);
+      const roomSnap = await getDoc(roomRef);
+
+      if (!roomSnap.exists()) {
+        showStatus('error', 'No encontramos una sala con ese código. Verifícalo con el organizador.');
+        checkCodeBtn.disabled = false;
+        return;
+      }
+
+      validatedCode = code;
+      const already = localStorage.getItem(STORAGE_PREFIX + code);
+
+      if (already) {
+        watchRoom(code, already);
+        return;
+      }
+
+      if (roomSnap.data().estado !== 'abierto') {
+        showStatus('error', 'Las inscripciones de esta sala ya están cerradas.');
+        checkCodeBtn.disabled = false;
+        return;
+      }
+
+      clearStatus();
+      codeStep.classList.add('hidden');
+      nameStep.classList.remove('hidden');
+      subtitle.textContent = `Sala ${code} encontrada. Ahora ingresa tu nombre.`;
+      nameInput.focus();
+    } catch (err) {
+      showStatus('error', 'No pudimos verificar la sala. Prueba de nuevo en unos segundos.');
+      checkCodeBtn.disabled = false;
+    }
+  }
+
+  // ---------- Paso 2: unirse con el nombre ----------
+  async function join() {
+    const name = nameInput.value.trim();
+    if (!validatedCode) return;
+    if (!name) { showStatus('error', 'Ingresa tu nombre.'); return; }
+
+    joinBtn.disabled = true;
+    showStatus('info', 'Uniéndote…');
+
+    try {
+      await addDoc(collection(db, 'torneos', validatedCode, 'participantes'), {
+        nombre: name,
+        unidoEn: serverTimestamp(),
+      });
+
+      localStorage.setItem(STORAGE_PREFIX + validatedCode, name);
+      watchRoom(validatedCode, name);
+    } catch (err) {
+      showStatus('error', 'No pudimos unirte a la sala. Prueba de nuevo en unos segundos.');
+      joinBtn.disabled = false;
+    }
+  }
+
+  changeCodeBtn.addEventListener('click', () => {
+    if (roomUnsub) { roomUnsub(); roomUnsub = null; }
+    validatedCode = null;
+    nameStep.classList.add('hidden');
+    resultStep.classList.add('hidden');
+    codeStep.classList.remove('hidden');
+    checkCodeBtn.disabled = false;
+    subtitle.textContent = 'Ingresa el código de la sala para continuar.';
+    clearStatus();
+    codeInput.focus();
+  });
+
+  checkCodeBtn.addEventListener('click', checkCode);
+  joinBtn.addEventListener('click', join);
+  codeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') checkCode(); });
+  nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') join(); });
+
+  if (prefillCode && firebaseConfig.apiKey !== 'TU_API_KEY') checkCode();
+</script>
+
+</body>
+</html>
