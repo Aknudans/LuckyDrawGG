@@ -191,6 +191,181 @@
     text-align: center;
     margin-bottom: 4px;
   }
+
+  .round-info {
+    color: var(--accent);
+    font-size: 0.82rem;
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+  .standing-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: #0f1218;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    font-size: 0.88rem;
+    text-align: left;
+  }
+  .standing-row.champion { border-color: var(--accent); background: var(--accent-soft); }
+  .standing-row.me { border-color: var(--accent); }
+  .standing-rank { width: 22px; font-weight: 700; color: var(--text-dim); }
+  .standing-row.champion .standing-rank { color: var(--accent); }
+  .standing-name { flex: 1; }
+  .standing-points { font-weight: 700; color: var(--accent); }
+
+  .vida-card {
+    background: #0f1218;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+    text-align: left;
+  }
+  .vida-card.me { border-color: var(--accent); }
+  .vida-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .vida-name { font-size: 0.9rem; font-weight: 700; }
+  .vida-toggle-more {
+    width: auto;
+    background: transparent;
+    color: var(--text-dim);
+    border: none;
+    padding: 2px 4px;
+    margin: 0;
+    font-size: 0.74rem;
+    font-weight: 600;
+  }
+  .vida-life-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .vida-life-row button {
+    width: 40px;
+    margin: 0;
+    padding: 8px 0;
+    font-size: 0.85rem;
+  }
+  .vida-life-row button.secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .vida-life-value {
+    flex: 1;
+    text-align: center;
+    font-size: 1.6rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .vida-life-value.low { color: var(--danger); }
+  .vida-extra { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border); }
+  .counter-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 0.82rem;
+  }
+  .counter-row span:first-child { flex: 1; color: var(--text-dim); }
+  .counter-row .counter-value {
+    width: 26px;
+    text-align: center;
+    font-weight: 700;
+    color: var(--text);
+    flex: none;
+  }
+  .counter-row button {
+    width: 28px;
+    height: 28px;
+    margin: 0;
+    padding: 0;
+    font-size: 0.85rem;
+    line-height: 1;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .counter-row .counter-value.danger { color: var(--danger); }
+  .cmd-dmg-title {
+    font-size: 0.76rem;
+    color: var(--text-dim);
+    font-weight: 700;
+    margin: 10px 0 6px;
+  }
+  .vida-reset-btn {
+    width: 100%;
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    font-size: 0.72rem;
+    font-weight: 500;
+    padding: 6px;
+    margin-top: 10px;
+  }
+
+  /* Pantalla dedicada de vidas — se activa sola al iniciar el tiempo */
+  .vida-screen {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 50;
+    flex-direction: column;
+    padding: 10px;
+    box-sizing: border-box;
+  }
+  .vida-screen.show { display: flex; }
+  .vida-screen-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    flex: none;
+  }
+  .vida-screen-topbar button {
+    width: auto;
+    margin: 0;
+    padding: 8px 12px;
+    font-size: 0.76rem;
+  }
+  .vida-screen-round { color: var(--accent); font-size: 0.8rem; font-weight: 700; text-align: center; }
+  .vida-rows {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+  }
+  .vida-row {
+    flex: 1;
+    display: flex;
+    gap: 8px;
+    min-height: 0;
+  }
+  .vida-seat {
+    flex: 1;
+    min-width: 0;
+    overflow-y: auto;
+    background: #0f1218;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    text-align: left;
+  }
+  .vida-seat.me { border-color: var(--accent); }
+  .vida-seat.rotated { transform: rotate(180deg); }
+  .vida-seat .vida-life-row { flex-wrap: wrap; }
 </style>
 </head>
 <body>
@@ -220,17 +395,35 @@
       <div id="waitingMsg"></div>
     </div>
     <div id="podBlock" class="hidden">
-      <div class="pod-title" id="podTitle"></div>
-      <div id="podList"></div>
-      <div id="timerBlock" class="hidden">
-        <div class="pod-title" style="margin-top:20px;">⏱️ Tiempo de la ronda</div>
-        <div class="timer-display" id="timerDisplay"></div>
-        <div class="timer-hint" id="timerHint"></div>
+      <div class="round-info" id="roundInfo"></div>
+      <div id="activeRoundBlock">
+        <div class="pod-title" id="podTitle"></div>
+        <div id="podList"></div>
+        <div id="timerBlock" class="hidden">
+          <div class="pod-title" style="margin-top:20px;">⏱️ Tiempo de la ronda</div>
+          <div class="timer-display" id="timerDisplay"></div>
+          <div class="timer-hint" id="timerHint"></div>
+        </div>
+        <button type="button" id="verVidasBtn" style="margin-top:20px;">🎮 Ver contador de vidas</button>
+        <div class="hint">Al iniciar el tiempo de la ronda pasas automáticamente a esta pantalla.</div>
+      </div>
+      <div id="finalResultsBlock" class="hidden">
+        <div class="pod-title">Posiciones finales</div>
+        <div id="finalStandingsList"></div>
       </div>
     </div>
   </div>
 
   <div class="status" id="statusBox"></div>
+</div>
+
+<div id="vidaScreen" class="vida-screen">
+  <div class="vida-screen-topbar">
+    <button type="button" class="back-btn" id="volverRondaBtn" style="width:auto; margin:0;">&larr; Ver ronda</button>
+    <span class="vida-screen-round" id="vidaScreenRound"></span>
+    <button type="button" class="back-btn" id="toggleMesaBtn" style="width:auto; margin:0;">🔄 Modo mesa</button>
+  </div>
+  <div class="vida-rows" id="vidaRows"></div>
 </div>
 
 <a class="back" href="index.html">&larr; Volver al inicio</a>
@@ -239,7 +432,8 @@
   import { firebaseConfig } from './firebase-config.js';
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
   import {
-    getFirestore, doc, getDoc, collection, addDoc, onSnapshot, serverTimestamp
+    getFirestore, doc, getDoc, setDoc, updateDoc, increment,
+    collection, addDoc, onSnapshot, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
   const subtitle = document.getElementById('subtitle');
@@ -255,11 +449,23 @@
   const waitingBlock = document.getElementById('waitingBlock');
   const waitingMsg = document.getElementById('waitingMsg');
   const podBlock = document.getElementById('podBlock');
+  const roundInfo = document.getElementById('roundInfo');
+  const activeRoundBlock = document.getElementById('activeRoundBlock');
   const podTitle = document.getElementById('podTitle');
   const podList = document.getElementById('podList');
   const timerBlock = document.getElementById('timerBlock');
   const timerDisplay = document.getElementById('timerDisplay');
   const timerHint = document.getElementById('timerHint');
+  const finalResultsBlock = document.getElementById('finalResultsBlock');
+  const finalStandingsList = document.getElementById('finalStandingsList');
+  const mainPanel = document.querySelector('.panel');
+  const backLink = document.querySelector('.back');
+  const vidaScreen = document.getElementById('vidaScreen');
+  const vidaScreenRound = document.getElementById('vidaScreenRound');
+  const vidaRows = document.getElementById('vidaRows');
+  const verVidasBtn = document.getElementById('verVidasBtn');
+  const volverRondaBtn = document.getElementById('volverRondaBtn');
+  const toggleMesaBtn = document.getElementById('toggleMesaBtn');
 
   function showStatus(kind, msg) {
     statusBox.className = `status show ${kind}`;
@@ -317,15 +523,34 @@
     waitingBlock.classList.add('hidden');
     podBlock.classList.remove('hidden');
 
-    const myPodEntry = data.pods.find((pod) => pod.jugadores.includes(myName));
+    const rondaActual = data.rondaActual || 1;
+    const rondasTotales = data.rondasTotales || 1;
 
-    if (!myPodEntry) {
-      podTitle.textContent = '';
-      podList.innerHTML = `<div class="status show error">No pudimos encontrar tu nombre en ningún pod. Consulta con el organizador.</div>`;
+    if (data.estado === 'finalizado') {
+      roundInfo.textContent = `🏁 Torneo finalizado — ${rondasTotales} ronda${rondasTotales === 1 ? '' : 's'}`;
+      activeRoundBlock.classList.add('hidden');
+      finalResultsBlock.classList.remove('hidden');
+      renderFinalStandings(data.puntos || {}, myName);
+      if (vidasUnsub) { vidasUnsub(); vidasUnsub = null; currentPodKey = null; }
+      if (vidaScreen.classList.contains('show')) ocultarVidaScreen();
       return;
     }
 
-    const myPod = myPodEntry.jugadores;
+    roundInfo.textContent = `Ronda ${rondaActual} de ${rondasTotales}`;
+    activeRoundBlock.classList.remove('hidden');
+    finalResultsBlock.classList.add('hidden');
+
+    const myPodIndex = data.pods.findIndex((pod) => pod.jugadores.includes(myName));
+
+    if (myPodIndex === -1) {
+      podTitle.textContent = '';
+      podList.innerHTML = `<div class="status show error">No pudimos encontrar tu nombre en ningún pod. Consulta con el organizador.</div>`;
+      vidaRows.innerHTML = '';
+      if (vidasUnsub) { vidasUnsub(); vidasUnsub = null; currentPodKey = null; }
+      return;
+    }
+
+    const myPod = data.pods[myPodIndex].jugadores;
     podTitle.textContent = `Tu pod (${myPod.length} jugadores)`;
     podList.innerHTML = myPod.map((n) => {
       const isMe = n === myName;
@@ -334,6 +559,48 @@
 
     lastTimerState = data.timer || null;
     renderTimerDisplay();
+
+    currentPodJugadores = myPod;
+    currentMyName = myName;
+    const podKey = `r${rondaActual}_p${myPodIndex}`;
+    if (podKey !== currentPodKey) {
+      currentPodKey = podKey;
+      attachVidasListener(validatedCode, podKey);
+    }
+
+    vidaScreenRound.textContent = `Ronda ${rondaActual} de ${rondasTotales}`;
+
+    // En cuanto el organizador pone a correr el tiempo, saltamos solos a la
+    // pantalla de vidas — no hace falta que cada jugador la busque a mano.
+    // Se dispara en el flanco false→true, no en cada snapshot, para no
+    // interrumpir a alguien que decidió volver a "Ver ronda" mientras el
+    // tiempo sigue corriendo.
+    const corriendoAhora = !!(data.timer && data.timer.running);
+    if (corriendoAhora && !lastTimerRunningFlag) {
+      mostrarVidaScreen();
+    } else if (vidaScreen.classList.contains('show')) {
+      renderVidaGrid();
+    }
+    lastTimerRunningFlag = corriendoAhora;
+  }
+
+  function renderFinalStandings(puntos, myName) {
+    const nombres = Object.keys(puntos);
+    if (!nombres.length) {
+      finalStandingsList.innerHTML = '<div class="hint" style="margin-top:0;">No hay resultados registrados.</div>';
+      return;
+    }
+    const ordenado = nombres.slice().sort((a, b) => puntos[b] - puntos[a]);
+    finalStandingsList.innerHTML = ordenado.map((nombre, i) => {
+      const isMe = nombre === myName;
+      const isChampion = i === 0;
+      return `
+        <div class="standing-row${isChampion ? ' champion' : ''}${isMe ? ' me' : ''}">
+          <span class="standing-rank">${isChampion ? '🏆' : `#${i + 1}`}</span>
+          <span class="standing-name">${nombre}${isMe ? ' <span class="me-tag">Tú</span>' : ''}</span>
+          <span class="standing-points">${puntos[nombre]} pts</span>
+        </div>`;
+    }).join('');
   }
 
   // ---------- Temporizador de ronda (sincronizado con el organizador) ----------
@@ -371,6 +638,212 @@
   }
 
   setInterval(renderTimerDisplay, 1000);
+
+  // ---------- Contador de vidas compartido del pod ----------
+  // El documento torneos/{code}/vidas/{rN_pM} lo crea el organizador (con
+  // valores por defecto) al armar los pods de cada ronda — ver
+  // crear-torneo.html / torneo.html. Acá solo lo leemos en vivo y escribimos
+  // ajustes con increment(), para que dos celulares tocando el mismo contador
+  // al mismo tiempo no se pisen entre sí (Firestore aplica cada incremento de
+  // forma atómica en el servidor, sin importar el orden de llegada).
+  let vidasUnsub = null;
+  let currentPodKey = null;
+  let currentVidas = {};
+  let currentPodJugadores = [];
+  let currentMyName = null;
+  let mesaMode = false;
+  let lastTimerRunningFlag = false;
+  const contadoresExpandidos = new Set();
+
+  function attachVidasListener(code, podKey) {
+    if (vidasUnsub) { vidasUnsub(); vidasUnsub = null; }
+    const ref = doc(db, 'torneos', code, 'vidas', podKey);
+    vidasUnsub = onSnapshot(ref, (snap) => {
+      currentVidas = (snap.exists() && snap.data().jugadores) || {};
+      renderVidaGrid();
+    });
+  }
+
+  // ---------- Pantalla dedicada de vidas: "mi celular" vs "modo mesa" ----------
+  // En "mi celular" cada quien mira su propio teléfono normal, sin rotar
+  // nada — el orden de asientos (2 arriba / 2 abajo para 4 jugadores, etc.)
+  // es solo para que se vea como una mesa y sea más rápido de escanear.
+  // En "modo mesa" se asume que ESE celular quedó apoyado plano en el centro
+  // de la mesa: la fila de arriba se rota 180° para que quien está sentado
+  // del otro lado la lea al derecho, sin necesidad de pasar el teléfono.
+  function repartirAsientos(jugadores) {
+    const n = jugadores.length;
+    if (n <= 2) return { arriba: [], abajo: jugadores };
+    if (n === 3) return { arriba: jugadores.slice(0, 1), abajo: jugadores.slice(1) };
+    return { arriba: jugadores.slice(0, 2), abajo: jugadores.slice(2) };
+  }
+
+  function mostrarVidaScreen() {
+    mainPanel.classList.add('hidden');
+    backLink.classList.add('hidden');
+    vidaScreen.classList.add('show');
+    renderVidaGrid();
+  }
+  function ocultarVidaScreen() {
+    vidaScreen.classList.remove('show');
+    mainPanel.classList.remove('hidden');
+    backLink.classList.remove('hidden');
+  }
+  verVidasBtn.addEventListener('click', mostrarVidaScreen);
+  volverRondaBtn.addEventListener('click', ocultarVidaScreen);
+  toggleMesaBtn.addEventListener('click', () => {
+    mesaMode = !mesaMode;
+    toggleMesaBtn.textContent = mesaMode ? '📱 Mi celular' : '🔄 Modo mesa';
+    renderVidaGrid();
+  });
+
+  function datosJugador(nombre) {
+    const v = currentVidas[nombre] || {};
+    return {
+      vida: v.vida ?? 40,
+      veneno: v.veneno ?? 0,
+      energia: v.energia ?? 0,
+      experiencia: v.experiencia ?? 0,
+      radiacion: v.radiacion ?? 0,
+      tickets: v.tickets ?? 0,
+      danoComandante: v.danoComandante || {},
+    };
+  }
+
+  function renderSeatContent(nombre) {
+    const d = datosJugador(nombre);
+    const isMe = nombre === currentMyName;
+    const expandido = contadoresExpandidos.has(nombre);
+    const oponentes = currentPodJugadores.filter((n) => n !== nombre);
+    const safeName = nombre.replace(/"/g, '&quot;');
+
+    const contadorSimple = (etiqueta, campo, valor, peligroDesde) => `
+      <div class="counter-row">
+        <span>${etiqueta}</span>
+        <button type="button" data-action="counter" data-name="${safeName}" data-field="${campo}" data-delta="-1" ${valor <= 0 ? 'disabled' : ''}>−</button>
+        <span class="counter-value${peligroDesde && valor >= peligroDesde ? ' danger' : ''}">${valor}</span>
+        <button type="button" data-action="counter" data-name="${safeName}" data-field="${campo}" data-delta="1">+</button>
+      </div>`;
+
+    const filasComandante = oponentes.map((op) => {
+      const valor = d.danoComandante[op] ?? 0;
+      const safeOp = op.replace(/"/g, '&quot;');
+      return `
+        <div class="counter-row">
+          <span>de ${op}</span>
+          <button type="button" data-action="cmd" data-name="${safeName}" data-from="${safeOp}" data-delta="-1" ${valor <= 0 ? 'disabled' : ''}>−</button>
+          <span class="counter-value${valor >= 21 ? ' danger' : ''}">${valor}</span>
+          <button type="button" data-action="cmd" data-name="${safeName}" data-from="${safeOp}" data-delta="1">+</button>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="vida-header">
+        <span class="vida-name">${nombre}${isMe ? ' <span class="me-tag">Tú</span>' : ''}</span>
+        <button type="button" class="vida-toggle-more" data-action="toggle" data-name="${safeName}">${expandido ? 'Menos ▴' : 'Más ▾'}</button>
+      </div>
+      <div class="vida-life-row">
+        <button type="button" class="secondary" data-action="counter" data-name="${safeName}" data-field="vida" data-delta="-5">-5</button>
+        <button type="button" class="secondary" data-action="counter" data-name="${safeName}" data-field="vida" data-delta="-1">-1</button>
+        <span class="vida-life-value${d.vida <= 0 ? ' low' : ''}">${d.vida}</span>
+        <button type="button" class="secondary" data-action="counter" data-name="${safeName}" data-field="vida" data-delta="1">+1</button>
+        <button type="button" class="secondary" data-action="counter" data-name="${safeName}" data-field="vida" data-delta="5">+5</button>
+      </div>
+      <div class="vida-extra${expandido ? '' : ' hidden'}">
+        ${contadorSimple('Veneno', 'veneno', d.veneno, 10)}
+        ${contadorSimple('Energía', 'energia', d.energia, null)}
+        ${contadorSimple('Experiencia', 'experiencia', d.experiencia, null)}
+        ${contadorSimple('Radiación', 'radiacion', d.radiacion, null)}
+        ${contadorSimple('Tickets', 'tickets', d.tickets, null)}
+        ${oponentes.length ? `<div class="cmd-dmg-title">Daño de comandante recibido</div>${filasComandante}` : ''}
+        <button type="button" class="vida-reset-btn" data-action="reset" data-name="${safeName}">Reiniciar contadores de ${nombre}</button>
+      </div>`;
+  }
+
+  function renderSeat(nombre, esFilaDeArriba) {
+    const rotar = mesaMode && esFilaDeArriba;
+    return `<div class="vida-seat${nombre === currentMyName ? ' me' : ''}${rotar ? ' rotated' : ''}">${renderSeatContent(nombre)}</div>`;
+  }
+
+  function renderVidaGrid() {
+    const { arriba, abajo } = repartirAsientos(currentPodJugadores);
+    const filaArriba = arriba.length ? `<div class="vida-row">${arriba.map((n) => renderSeat(n, true)).join('')}</div>` : '';
+    const filaAbajo = `<div class="vida-row">${abajo.map((n) => renderSeat(n, false)).join('')}</div>`;
+    vidaRows.innerHTML = filaArriba + filaAbajo;
+  }
+
+  vidaRows.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn || btn.disabled) return;
+    const nombre = btn.dataset.name;
+
+    if (btn.dataset.action === 'toggle') {
+      if (contadoresExpandidos.has(nombre)) contadoresExpandidos.delete(nombre);
+      else contadoresExpandidos.add(nombre);
+      renderVidaGrid();
+    } else if (btn.dataset.action === 'counter') {
+      ajustarContador(nombre, btn.dataset.field, parseInt(btn.dataset.delta, 10));
+    } else if (btn.dataset.action === 'cmd') {
+      ajustarDanoComandante(nombre, btn.dataset.from, parseInt(btn.dataset.delta, 10));
+    } else if (btn.dataset.action === 'reset') {
+      reiniciarJugador(nombre);
+    }
+  });
+
+  async function ajustarContador(nombre, campo, delta) {
+    // Actualización optimista local antes de esperar la confirmación de
+    // Firestore, igual que en torneo.html — así varios celulares tocando
+    // contadores casi al mismo tiempo no se pisan entre sí en la pantalla.
+    const actual = datosJugador(nombre);
+    const base = campo === 'vida' ? 40 : 0;
+    const nuevoValor = (actual[campo] ?? base) + delta;
+    currentVidas = { ...currentVidas, [nombre]: { ...actual, [campo]: nuevoValor } };
+    renderVidaGrid();
+
+    if (!currentPodKey) return;
+    try {
+      await updateDoc(doc(db, 'torneos', validatedCode, 'vidas', currentPodKey), {
+        [`jugadores.${nombre}.${campo}`]: increment(delta),
+      });
+    } catch (err) {
+      // El próximo snapshot corrige cualquier desajuste; no interrumpimos el
+      // juego con un mensaje de error por cada click.
+    }
+  }
+
+  async function ajustarDanoComandante(nombre, oponente, delta) {
+    const actual = datosJugador(nombre);
+    const danoActual = actual.danoComandante || {};
+    const nuevoValor = (danoActual[oponente] ?? 0) + delta;
+    currentVidas = { ...currentVidas, [nombre]: { ...actual, danoComandante: { ...danoActual, [oponente]: nuevoValor } } };
+    renderVidaGrid();
+
+    if (!currentPodKey) return;
+    try {
+      await updateDoc(doc(db, 'torneos', validatedCode, 'vidas', currentPodKey), {
+        [`jugadores.${nombre}.danoComandante.${oponente}`]: increment(delta),
+      });
+    } catch (err) {
+      // Igual que arriba: el próximo snapshot reconcilia el valor real.
+    }
+  }
+
+  async function reiniciarJugador(nombre) {
+    const oponentes = currentPodJugadores.filter((n) => n !== nombre);
+    const danoComandante = {};
+    oponentes.forEach((op) => { danoComandante[op] = 0; });
+    const defaults = { vida: 40, veneno: 0, energia: 0, experiencia: 0, radiacion: 0, tickets: 0, danoComandante };
+
+    currentVidas = { ...currentVidas, [nombre]: defaults };
+    renderVidaGrid();
+
+    if (!currentPodKey) return;
+    try {
+      await setDoc(doc(db, 'torneos', validatedCode, 'vidas', currentPodKey), { jugadores: { [nombre]: defaults } }, { merge: true });
+    } catch (err) {
+      // El próximo snapshot reconcilia el valor real si el guardado falló.
+    }
+  }
 
   // ---------- Paso 1: validar el código de sala ----------
   async function checkCode() {
@@ -442,6 +915,9 @@
 
   changeCodeBtn.addEventListener('click', () => {
     if (roomUnsub) { roomUnsub(); roomUnsub = null; }
+    if (vidasUnsub) { vidasUnsub(); vidasUnsub = null; currentPodKey = null; }
+    if (vidaScreen.classList.contains('show')) ocultarVidaScreen();
+    lastTimerRunningFlag = false;
     validatedCode = null;
     nameStep.classList.add('hidden');
     resultStep.classList.add('hidden');

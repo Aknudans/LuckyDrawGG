@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Torneo en curso — Commander</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --bg-card: #171a21;
+    --bg-card-2: #1c2029;
+    --border: #2a2f3a;
+    --text: #eef0f4;
+    --text-dim: #9aa1ad;
+    --accent: #c9a227;
+    --accent-soft: rgba(201, 162, 39, 0.15);
+    --danger: #d9534f;
+    --danger-soft: rgba(217, 83, 79, 0.15);
+    --ok: #4caf7d;
+    --ok-soft: rgba(76, 175, 125, 0.15);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(circle at 50% 0%, #191d26 0%, var(--bg) 60%);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px 90px;
+  }
+
+  .topbar {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .topbar a { color: var(--text-dim); text-decoration: none; font-size: 0.85rem; }
+  .topbar a:hover { color: var(--text); }
+
+  #accountBar {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0 0 24px;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+  }
+  #accountBar button { padding: 5px 14px; font-size: 0.78rem; }
+
+  h1 { font-size: 1.6rem; margin: 0 0 4px; text-align: center; }
+  .round-label {
+    color: var(--accent);
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  .panel {
+    width: 100%;
+    max-width: 900px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    margin-bottom: 22px;
+  }
+  .panel h2 {
+    font-size: 1.05rem;
+    margin: 0 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .step-badge {
+    font-size: 0.7rem;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border: 1px solid rgba(201,162,39,0.4);
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-weight: 700;
+  }
+
+  label { display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 8px; }
+  input[type="number"] {
+    width: 100%;
+    background: #0f1218;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 10px 12px;
+    font-size: 0.95rem;
+  }
+  input[type="number"]:focus { outline: none; border-color: var(--accent); }
+
+  button {
+    background: var(--accent);
+    color: #1a1a1a;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  button:hover { opacity: 0.88; }
+  button.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  button.danger-btn { background: var(--danger); color: #fff; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .hint { font-size: 0.8rem; color: var(--text-dim); margin-top: 10px; line-height: 1.5; }
+
+  .warning {
+    background: var(--danger-soft);
+    border: 1px solid rgba(217,83,79,0.4);
+    color: #f2a29f;
+    font-size: 0.82rem;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-top: 12px;
+    display: none;
+  }
+  .warning.show { display: block; }
+
+  .actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
+  .hidden { display: none; }
+
+  /* Timer */
+  .timer-setup { display: flex; justify-content: center; gap: 10px; margin-bottom: 18px; align-items: center; flex-wrap: wrap; }
+  .timer-setup input { width: 90px; text-align: center; }
+  .timer-setup label { margin: 0; }
+  .timer-display {
+    font-size: 3.2rem;
+    font-weight: 800;
+    text-align: center;
+    letter-spacing: 0.03em;
+    margin: 10px 0 18px;
+    font-variant-numeric: tabular-nums;
+  }
+  .timer-display.warn { color: #e0a531; }
+  .timer-display.danger { color: var(--danger); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .timer-controls { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+
+  /* Standings */
+  .standing-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 12px;
+    background: var(--bg-card-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    font-size: 0.92rem;
+  }
+  .standing-row.champion { border-color: var(--accent); background: var(--accent-soft); }
+  .standing-rank { width: 24px; font-weight: 700; color: var(--text-dim); }
+  .standing-row.champion .standing-rank { color: var(--accent); }
+  .standing-name { flex: 1; }
+  .standing-points { font-weight: 700; color: var(--accent); }
+
+  /* Pods */
+  .pods-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+  }
+  .pod-card {
+    background: var(--bg-card-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .pod-card h3 {
+    font-size: 0.85rem;
+    margin: 0 0 12px;
+    color: var(--accent);
+    display: flex;
+    justify-content: space-between;
+  }
+  .player-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    background: #0f1218;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.88rem;
+    margin-bottom: 8px;
+  }
+  .player-line.winner { border-color: var(--ok); background: var(--ok-soft); }
+  .player-line .win-btn {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    padding: 4px 8px;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+  .player-line.winner .win-btn { background: var(--ok); color: #0f1115; border-color: var(--ok); }
+  .pod-undo-btn {
+    width: 100%;
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    font-size: 0.72rem;
+    font-weight: 500;
+    padding: 6px;
+    margin-top: 6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="index.html">&larr; Volver al inicio</a>
+  <span style="color:var(--text-dim); font-size:0.8rem;">Magic: The Gathering — Commander</span>
+</div>
+
+<div id="accountBar" class="hidden">
+  <span id="accountEmail"></span>
+  <button class="secondary" id="logoutBtn">Cerrar sesión</button>
+</div>
+
+<div id="notReadyPanel" class="panel hidden">
+  <h2><span class="step-badge">Aviso</span> <span id="notReadyTitle"></span></h2>
+  <div class="hint" id="notReadyMsg" style="margin-top:0;"></div>
+  <div class="actions" style="justify-content:flex-start;">
+    <a href="crear-torneo.html"><button class="secondary" type="button">Ir a Crear torneo</button></a>
+  </div>
+</div>
+
+<div id="tournamentView" class="hidden">
+  <h1 id="roomCodeTitle"></h1>
+  <div class="round-label" id="roundLabel"></div>
+
+  <div class="panel" id="timerPanel">
+    <h2>⏱️ Temporizador de ronda</h2>
+    <div class="timer-setup">
+      <label for="timerMinutes">Minutos por ronda</label>
+      <input type="number" id="timerMinutes" min="1" value="50">
+      <button class="secondary" id="applyTimerBtn">Aplicar</button>
+    </div>
+    <div class="timer-display" id="timerDisplay">--:--</div>
+    <div class="timer-controls">
+      <button id="startPauseBtn">▶️ Iniciar</button>
+      <button class="secondary" id="resetTimerBtn">⟲ Reiniciar</button>
+    </div>
+    <div class="hint" id="timerHint" style="text-align:center; margin-top:14px;"></div>
+  </div>
+
+  <div class="panel">
+    <h2><span class="step-badge">Bracket</span> Pods de la ronda</h2>
+    <div id="podsGrid" class="pods-grid"></div>
+    <div class="warning" id="roundWarning"></div>
+    <div class="actions">
+      <button id="closeRoundBtn" disabled>➡️ Cerrar ronda y continuar</button>
+    </div>
+    <div class="hint" style="text-align:center;">Marca a quien ganó cada pod antes de cerrar la ronda. Si se acabó el tiempo y quedó más de una persona con vida, marca a todos los que quedaron en mesa: con 1 solo ganador se llevan 3 puntos; con 2 o más, el punto se reparte y cada uno se lleva 1.</div>
+  </div>
+
+  <div class="panel">
+    <h2><span class="step-badge">Tabla</span> Posiciones</h2>
+    <div id="standingsList"></div>
+  </div>
+</div>
+
+<script type="module">
+  import { firebaseConfig } from './firebase-config.js';
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+  import {
+    getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot
+  } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+
+  // ---------- Distribución de pods (misma lógica que crear-torneo.html) ----------
+  function distributePods(n) {
+    if (n < 3) return [n];
+
+    let bestNumPods = null;
+    let bestDiff = Infinity;
+    const minPods = Math.ceil(n / 5);
+    const maxPods = Math.floor(n / 3);
+
+    for (let p = minPods; p <= maxPods; p++) {
+      const diff = Math.abs((n / p) - 4);
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        bestNumPods = p;
+      }
+    }
+    if (bestNumPods === null) return [n];
+
+    const base = Math.floor(n / bestNumPods);
+    const extra = n % bestNumPods;
+    const pods = new Array(bestNumPods).fill(base);
+    for (let i = 0; i < extra; i++) pods[i]++;
+    return pods;
+  }
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function buildPodsArray(sizes, names) {
+    const pods = [];
+    let cursor = 0;
+    sizes.forEach((size) => {
+      pods.push({ jugadores: names.slice(cursor, cursor + size), ganadores: [] });
+      cursor += size;
+    });
+    return pods;
+  }
+
+  // ---------- Contador de vidas por pod (mismo esquema que crear-torneo.html) ----------
+  function buildVidasDefaults(jugadores) {
+    const mapa = {};
+    jugadores.forEach((nombre) => {
+      const danoComandante = {};
+      jugadores.forEach((oponente) => { if (oponente !== nombre) danoComandante[oponente] = 0; });
+      mapa[nombre] = { vida: 40, veneno: 0, energia: 0, experiencia: 0, radiacion: 0, tickets: 0, danoComandante };
+    });
+    return { jugadores: mapa };
+  }
+
+  async function crearVidasParaRonda(rondaNumero, pods) {
+    await Promise.all(pods.map((pod, i) =>
+      setDoc(doc(db, 'torneos', roomCode, 'vidas', `r${rondaNumero}_p${i}`), buildVidasDefaults(pod.jugadores))
+    ));
+  }
+
+  // ---------- Elementos ----------
+  const accountBar = document.getElementById('accountBar');
+  const accountEmail = document.getElementById('accountEmail');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const notReadyPanel = document.getElementById('notReadyPanel');
+  const notReadyTitle = document.getElementById('notReadyTitle');
+  const notReadyMsg = document.getElementById('notReadyMsg');
+  const tournamentView = document.getElementById('tournamentView');
+  const roomCodeTitle = document.getElementById('roomCodeTitle');
+  const roundLabel = document.getElementById('roundLabel');
+  const podsGrid = document.getElementById('podsGrid');
+  const roundWarning = document.getElementById('roundWarning');
+  const closeRoundBtn = document.getElementById('closeRoundBtn');
+  const standingsList = document.getElementById('standingsList');
+  const timerMinutesInput = document.getElementById('timerMinutes');
+  const applyTimerBtn = document.getElementById('applyTimerBtn');
+  const timerDisplay = document.getElementById('timerDisplay');
+  const startPauseBtn = document.getElementById('startPauseBtn');
+  const resetTimerBtn = document.getElementById('resetTimerBtn');
+  const timerHint = document.getElementById('timerHint');
+
+  function showNotReady(title, msg) {
+    tournamentView.classList.add('hidden');
+    notReadyPanel.classList.remove('hidden');
+    notReadyTitle.textContent = title;
+    notReadyMsg.textContent = msg;
+  }
+  function showRoundWarning(msg) {
+    roundWarning.textContent = msg;
+    roundWarning.classList.add('show');
+  }
+  function clearRoundWarning() {
+    roundWarning.classList.remove('show');
+  }
+
+  const params = new URLSearchParams(location.search);
+  const roomCode = (params.get('code') || '').trim().toUpperCase();
+
+  if (!roomCode) {
+    showNotReady('Falta el código de sala', 'Abre esta página desde "Iniciar torneo" en Crear torneo.');
+  }
+
+  if (firebaseConfig.apiKey === 'TU_API_KEY') {
+    showNotReady('Firebase no está configurado', 'Falta completar firebase-config.js.');
+  }
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+
+  let currentUser = null;
+  let roomUnsub = null;
+
+  // Estado en memoria, actualizado en cada snapshot del documento del torneo.
+  let currentPods = [];
+  let currentPuntos = {};
+  let currentRondaActual = 1;
+  let currentRondasTotales = 1;
+  let currentRondasCompletadas = [];
+  let currentEstado = null;
+  let currentTimer = null;
+
+  onAuthStateChanged(auth, (user) => {
+    currentUser = user;
+    if (!user) {
+      accountBar.classList.add('hidden');
+      if (roomUnsub) { roomUnsub(); roomUnsub = null; }
+      showNotReady('Necesitas iniciar sesión', 'Esta pantalla es solo para el organizador. Inicia sesión en Crear torneo y vuelve a intentarlo.');
+      return;
+    }
+    accountBar.classList.remove('hidden');
+    accountEmail.textContent = user.email;
+    if (roomCode && firebaseConfig.apiKey !== 'TU_API_KEY') attachRoomListener();
+  });
+
+  logoutBtn.addEventListener('click', async () => {
+    if (roomUnsub) { roomUnsub(); roomUnsub = null; }
+    await signOut(auth);
+  });
+
+  function attachRoomListener() {
+    if (roomUnsub) roomUnsub();
+    const roomRef = doc(db, 'torneos', roomCode);
+    roomUnsub = onSnapshot(roomRef, (snap) => {
+      if (!snap.exists()) {
+        showNotReady('No encontramos esa sala', `No existe ningún torneo con el código ${roomCode}.`);
+        return;
+      }
+      const data = snap.data();
+      if (data.organizadorUid !== currentUser.uid) {
+        showNotReady('No tienes permiso', 'Esta pantalla solo la puede ver quien organizó el torneo.');
+        return;
+      }
+      if (!data.pods || !data.pods.length) {
+        showNotReady('Todavía no hay pods armados', 'Vuelve a "Crear torneo", cierra las inscripciones y presiona "Iniciar torneo".');
+        return;
+      }
+      notReadyPanel.classList.add('hidden');
+      tournamentView.classList.remove('hidden');
+      renderRoom(data);
+    }, () => {
+      showRoundWarning('Se perdió la conexión con la sala. Se va a actualizar sola en cuanto vuelva la señal.');
+    });
+  }
+
+  // ---------- Render general ----------
+  function renderRoom(data) {
+    currentPods = data.pods || [];
+    currentPuntos = data.puntos || {};
+    currentRondaActual = data.rondaActual || 1;
+    currentRondasTotales = data.rondasTotales || 1;
+    currentRondasCompletadas = data.rondasCompletadas || [];
+    currentEstado = data.estado;
+    currentTimer = data.timer || null;
+
+    roomCodeTitle.textContent = `Sala ${roomCode}`;
+    roundLabel.textContent = currentEstado === 'finalizado'
+      ? `🏆 Torneo finalizado — ${currentRondasTotales} ronda${currentRondasTotales === 1 ? '' : 's'}`
+      : `Ronda ${currentRondaActual} de ${currentRondasTotales}`;
+
+    renderPodsGrid();
+    renderStandings();
+    renderTimerTick();
+
+    const allDecided = currentPods.length > 0 && currentPods.every((p) => p.ganadores && p.ganadores.length > 0);
+    closeRoundBtn.classList.toggle('hidden', currentEstado === 'finalizado');
+    closeRoundBtn.disabled = !allDecided;
+    closeRoundBtn.textContent = currentRondaActual >= currentRondasTotales
+      ? '🏁 Cerrar ronda y finalizar torneo'
+      : '➡️ Cerrar ronda y continuar';
+  }
+
+  // ---------- Pods / declarar resultado ----------
+  // "ganadores" es la lista de quienes quedaron con vida/ganaron ese pod. Con
+  // 1 solo nombre es un ganador claro (3 puntos); con 2 o más, el organizador
+  // está marcando a todos los que seguían en mesa cuando se acabó el tiempo
+  // (1 punto repartido entre ellos) — no hay un botón de "empate" aparte, es
+  // la misma acción de marcar ganador, solo que aplicada a varios jugadores.
+  function renderPodsGrid() {
+    const readOnly = currentEstado === 'finalizado';
+    podsGrid.innerHTML = currentPods.map((pod, podIndex) => {
+      const ganadores = pod.ganadores || [];
+      const jugadores = pod.jugadores.map((nombre) => {
+        const isWinner = ganadores.includes(nombre);
+        return `
+          <div class="player-line${isWinner ? ' winner' : ''}">
+            <span>${nombre}</span>
+            ${readOnly ? '' : `<button type="button" class="win-btn" data-action="toggle" data-pod="${podIndex}" data-name="${nombre.replace(/"/g, '&quot;')}">${isWinner ? '🏆 Ganó' : 'Marcar ganador'}</button>`}
+          </div>`;
+      }).join('');
+
+      const undoBtn = (!readOnly && ganadores.length > 0) ? `<button type="button" class="pod-undo-btn" data-action="undo" data-pod="${podIndex}">Deshacer resultado</button>` : '';
+      const puntosHint = ganadores.length > 1
+        ? `<div class="hint" style="margin-top:6px; margin-bottom:0;">${ganadores.length} ganadores seleccionados: 1 punto para cada uno.</div>`
+        : '';
+
+      return `
+        <div class="pod-card">
+          <h3><span>Pod ${podIndex + 1}</span><span>${pod.jugadores.length} jugadores</span></h3>
+          ${jugadores}
+          ${puntosHint}
+          ${undoBtn}
+        </div>`;
+    }).join('');
+  }
+
+  podsGrid.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const podIndex = parseInt(btn.dataset.pod, 10);
+    const accion = btn.dataset.action;
+    if (accion === 'toggle') toggleGanador(podIndex, btn.dataset.name);
+    else if (accion === 'undo') toggleGanador(podIndex, null);
+  });
+
+  async function toggleGanador(podIndex, nombre) {
+    clearRoundWarning();
+    // Actualizamos el estado local (y lo re-renderizamos) antes de escribir a
+    // Firestore, en vez de esperar a que vuelva el snapshot. Si no hiciéramos
+    // esto, dos clics seguidos (uno por pod) leerían ambos el mismo
+    // "currentPods" desactualizado y el segundo write pisaría al primero,
+    // perdiendo el resultado que se acababa de declarar.
+    currentPods = currentPods.map((p, i) => {
+      if (i !== podIndex) return p;
+      if (nombre === null) return { jugadores: p.jugadores, ganadores: [] };
+      const ganadores = p.ganadores || [];
+      const nuevosGanadores = ganadores.includes(nombre)
+        ? ganadores.filter((n) => n !== nombre)
+        : [...ganadores, nombre];
+      return { jugadores: p.jugadores, ganadores: nuevosGanadores };
+    });
+    renderPodsGrid();
+    closeRoundBtn.disabled = !currentPods.every((p) => p.ganadores && p.ganadores.length > 0);
+
+    try {
+      await updateDoc(doc(db, 'torneos', roomCode), { pods: currentPods });
+    } catch (err) {
+      showRoundWarning('No pudimos guardar el resultado. Verifica tu conexión a internet e intenta de nuevo.');
+    }
+  }
+
+  // ---------- Posiciones ----------
+  function renderStandings() {
+    const nombres = Object.keys(currentPuntos);
+    if (!nombres.length) {
+      standingsList.innerHTML = '<div class="hint" style="margin-top:0;">Todavía no hay puntos registrados.</div>';
+      return;
+    }
+    const ordenado = nombres.slice().sort((a, b) => currentPuntos[b] - currentPuntos[a]);
+    const esFinal = currentEstado === 'finalizado';
+    standingsList.innerHTML = ordenado.map((nombre, i) => `
+      <div class="standing-row${esFinal && i === 0 ? ' champion' : ''}">
+        <span class="standing-rank">${esFinal && i === 0 ? '🏆' : `#${i + 1}`}</span>
+        <span class="standing-name">${nombre}</span>
+        <span class="standing-points">${currentPuntos[nombre]} pts</span>
+      </div>`).join('');
+  }
+
+  // ---------- Cerrar ronda ----------
+  closeRoundBtn.addEventListener('click', async () => {
+    if (!currentPods.every((p) => p.ganadores && p.ganadores.length > 0)) return;
+    closeRoundBtn.disabled = true;
+    clearRoundWarning();
+
+    try {
+      const nuevosPuntos = { ...currentPuntos };
+      currentPods.forEach((pod) => {
+        const ganadores = pod.ganadores || [];
+        // 1 ganador se lleva los 3 puntos completos; con 2 o más (quedaron
+        // varios con vida cuando se acabó el tiempo), se reparte 1 punto
+        // entre todos los que quedaron en mesa.
+        const puntosPorGanador = ganadores.length === 1 ? 3 : 1;
+        ganadores.forEach((n) => { nuevosPuntos[n] = (nuevosPuntos[n] || 0) + puntosPorGanador; });
+      });
+
+      const rondaArchivada = { numero: currentRondaActual, pods: currentPods };
+      const nuevasRondasCompletadas = [...currentRondasCompletadas, rondaArchivada];
+
+      if (currentRondaActual < currentRondasTotales) {
+        const nombresOrdenados = shuffle(Object.keys(nuevosPuntos)).sort((a, b) => nuevosPuntos[b] - nuevosPuntos[a]);
+        const sizes = distributePods(nombresOrdenados.length);
+        const nuevosPods = buildPodsArray(sizes, nombresOrdenados);
+
+        await updateDoc(doc(db, 'torneos', roomCode), {
+          puntos: nuevosPuntos,
+          rondasCompletadas: nuevasRondasCompletadas,
+          rondaActual: currentRondaActual + 1,
+          pods: nuevosPods,
+          timer: null,
+        });
+        await crearVidasParaRonda(currentRondaActual + 1, nuevosPods);
+      } else {
+        await updateDoc(doc(db, 'torneos', roomCode), {
+          puntos: nuevosPuntos,
+          rondasCompletadas: nuevasRondasCompletadas,
+          estado: 'finalizado',
+          timer: null,
+        });
+      }
+    } catch (err) {
+      showRoundWarning('No pudimos cerrar la ronda. Verifica tu conexión a internet e intenta de nuevo.');
+      closeRoundBtn.disabled = false;
+    }
+  });
+
+  // ---------- Temporizador (mismo esquema de ancla que crear-torneo.html) ----------
+  function formatTime(s) {
+    const m = Math.floor(Math.abs(s) / 60).toString().padStart(2, '0');
+    const sec = Math.abs(s % 60).toString().padStart(2, '0');
+    return (s < 0 ? '-' : '') + `${m}:${sec}`;
+  }
+
+  function timerRemaining() {
+    if (!currentTimer) return null;
+    if (currentTimer.running && currentTimer.endsAtMillis) {
+      return Math.round((currentTimer.endsAtMillis - Date.now()) / 1000);
+    }
+    return currentTimer.remainingSeconds;
+  }
+
+  // Cuando el reloj llega a 0, resolvemos solos el resultado de cada pod que
+  // todavía no tenga un ganador declarado a mano, mirando quién sigue con
+  // vida > 0 en ese instante — así el organizador no tiene que ir pod por
+  // pod preguntando quién ganó. "timerExpiredHandled" evita que esto se
+  // dispare de nuevo en cada tick mientras el reloj sigue en negativo, y se
+  // reinicia cada vez que se arranca/reinicia un tiempo nuevo.
+  let timerExpiredHandled = false;
+
+  function renderTimerTick() {
+    if (!currentTimer) {
+      timerDisplay.textContent = '--:--';
+      timerDisplay.classList.remove('warn', 'danger');
+      timerHint.textContent = 'Configura los minutos y presiona Iniciar.';
+      startPauseBtn.textContent = '▶️ Iniciar';
+      return;
+    }
+    const remaining = timerRemaining();
+    timerDisplay.textContent = formatTime(remaining);
+    timerDisplay.classList.remove('warn', 'danger');
+    if (remaining <= 0) {
+      timerDisplay.classList.add('danger');
+      timerHint.textContent = '¡Tiempo de ronda cumplido! Los pods sin resultado se resolvieron según las vidas restantes — revisa antes de cerrar la ronda.';
+      if (currentTimer.running && !timerExpiredHandled) {
+        timerExpiredHandled = true;
+        resolverRondaPorVida();
+      }
+    } else if (remaining <= 300) {
+      timerDisplay.classList.add('warn');
+      timerHint.textContent = 'Últimos 5 minutos de ronda.';
+    } else {
+      timerHint.textContent = '';
+    }
+    startPauseBtn.textContent = currentTimer.running ? '⏸️ Pausar' : '▶️ Iniciar';
+  }
+
+  // ---------- Resolver pods automáticamente por vida restante ----------
+  async function resolverRondaPorVida() {
+    if (!currentPods.length) return;
+    try {
+      const snaps = await Promise.all(currentPods.map((_, i) =>
+        getDoc(doc(db, 'torneos', roomCode, 'vidas', `r${currentRondaActual}_p${i}`))
+      ));
+
+      let huboCambios = false;
+      const nuevosPods = currentPods.map((pod, i) => {
+        if (pod.ganadores && pod.ganadores.length > 0) return pod; // ya decidido a mano, no lo tocamos
+
+        const snap = snaps[i];
+        const jugadoresVida = (snap.exists() && snap.data().jugadores) || {};
+        const sobrevivientes = pod.jugadores.filter((n) => (jugadoresVida[n]?.vida ?? 40) > 0);
+        // Si por alguna razón nadie quedó con vida (caso raro), se reparte el
+        // punto entre todo el pod en vez de dejarlo sin resolver.
+        const ganadores = sobrevivientes.length > 0 ? sobrevivientes : pod.jugadores.slice();
+
+        huboCambios = true;
+        return { jugadores: pod.jugadores, ganadores };
+      });
+
+      if (!huboCambios) return;
+
+      currentPods = nuevosPods;
+      renderPodsGrid();
+      closeRoundBtn.disabled = !currentPods.every((p) => p.ganadores && p.ganadores.length > 0);
+
+      await updateDoc(doc(db, 'torneos', roomCode), { pods: nuevosPods });
+    } catch (err) {
+      showRoundWarning('Se acabó el tiempo, pero no pudimos calcular los ganadores automáticamente según las vidas. Márcalos a mano abajo.');
+    }
+  }
+
+  async function persistTimer(timer) {
+    try {
+      await updateDoc(doc(db, 'torneos', roomCode), { timer });
+    } catch (err) {
+      timerHint.textContent = 'No pudimos sincronizar el tiempo con los participantes (sigue corriendo solo en esta pantalla).';
+    }
+  }
+
+  applyTimerBtn.addEventListener('click', async () => {
+    const mins = parseInt(timerMinutesInput.value, 10);
+    if (!mins || mins < 1) return;
+    const total = mins * 60;
+    timerExpiredHandled = false;
+    await persistTimer({ totalSeconds: total, remainingSeconds: total, endsAtMillis: null, running: false });
+  });
+
+  startPauseBtn.addEventListener('click', async () => {
+    if (!currentTimer) return;
+    if (currentTimer.running) {
+      await persistTimer({ ...currentTimer, remainingSeconds: timerRemaining(), endsAtMillis: null, running: false });
+    } else {
+      if (currentTimer.remainingSeconds > 0) timerExpiredHandled = false;
+      await persistTimer({ ...currentTimer, endsAtMillis: Date.now() + currentTimer.remainingSeconds * 1000, running: true });
+    }
+  });
+
+  resetTimerBtn.addEventListener('click', async () => {
+    if (!currentTimer) return;
+    timerExpiredHandled = false;
+    await persistTimer({ ...currentTimer, remainingSeconds: currentTimer.totalSeconds, endsAtMillis: null, running: false });
+  });
+
+  setInterval(renderTimerTick, 1000);
+</script>
+
+</body>
+</html>

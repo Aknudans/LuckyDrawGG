@@ -331,6 +331,9 @@
 
   <div id="roomCreate">
     <div class="hint" style="margin-top:0;">Crea una sala para que los participantes se sumen desde su celular escaneando un QR o entrando a un enlace — no hace falta que cargues los nombres a mano.</div>
+    <label for="totalRoundsInput" style="margin-top:16px;">Cantidad de rondas del torneo</label>
+    <input type="number" id="totalRoundsInput" min="1" value="3" style="max-width:120px;">
+    <div class="hint">Al terminar cada ronda vas a declarar el ganador de cada pod; los siguientes pods se arman agrupando a quienes llevan puntajes parecidos.</div>
     <button id="createRoomBtn">Crear sala de espera</button>
   </div>
 
@@ -378,27 +381,20 @@
 
 <!-- STEP 3 -->
 <div class="panel hidden" id="step3">
-  <h2><span class="step-badge">Paso 3</span> Pods sorteados — Ronda 1</h2>
+  <h2><span class="step-badge">Paso 3</span> Pods de la ronda 1</h2>
   <div id="podsGridResult" class="pods-grid"></div>
   <div class="actions">
-    <button id="reshuffleBtn">🔀 Volver a sortear</button>
+    <button class="secondary" id="reshuffleBtn">🔀 Volver a sortear</button>
   </div>
-</div>
 
-<!-- TIMER -->
-<div class="panel hidden" id="timerPanel">
-  <h2>⏱️ Temporizador de ronda</h2>
-  <div class="timer-setup">
+  <div class="timer-setup" style="margin-top:24px;">
     <label for="timerMinutes">Minutos por ronda</label>
     <input type="number" id="timerMinutes" min="1" value="50">
-    <button class="secondary" id="applyTimerBtn">Aplicar</button>
   </div>
-  <div class="timer-display" id="timerDisplay">50:00</div>
-  <div class="timer-controls">
-    <button id="startPauseBtn">▶️ Iniciar</button>
-    <button class="secondary" id="resetTimerBtn">⟲ Reiniciar</button>
+  <div class="actions" style="justify-content:center;">
+    <button id="startTournamentBtn">▶️ Iniciar torneo</button>
   </div>
-  <div class="hint" id="timerHint" style="text-align:center; margin-top:14px;"></div>
+  <div class="hint" style="text-align:center;">Esto arranca el tiempo de la ronda 1 y te lleva a la pantalla del torneo, donde vas a ver el bracket completo y declarar los ganadores de cada pod.</div>
 </div>
 
 <script type="module">
@@ -464,11 +460,33 @@
     return pods;
   }
 
+  // ---------- Contador de vidas por pod ----------
+  // Cada pod tiene su propio documento en torneos/{code}/vidas/{podKey}, con
+  // valores por defecto (40 de vida, el resto en 0) para cada jugador. Se crea
+  // acá, al armar los pods, en vez de esperar a que algún celular lo inicialice
+  // — así no hay una carrera entre varios participantes creando el documento
+  // al mismo tiempo la primera vez que alguien abre el contador.
+  function buildVidasDefaults(jugadores) {
+    const mapa = {};
+    jugadores.forEach((nombre) => {
+      const danoComandante = {};
+      jugadores.forEach((oponente) => { if (oponente !== nombre) danoComandante[oponente] = 0; });
+      mapa[nombre] = { vida: 40, veneno: 0, energia: 0, experiencia: 0, radiacion: 0, tickets: 0, danoComandante };
+    });
+    return { jugadores: mapa };
+  }
+
+  async function crearVidasParaRonda(rondaNumero, pods) {
+    await Promise.all(pods.map((pod, i) =>
+      setDoc(doc(db, 'torneos', roomCode, 'vidas', `r${rondaNumero}_p${i}`), buildVidasDefaults(pod.jugadores))
+    ));
+  }
+
   const countWarning = document.getElementById('countWarning');
   const step1 = document.getElementById('step1');
   const step3 = document.getElementById('step3');
-  const timerPanel = document.getElementById('timerPanel');
   const podsGridResult = document.getElementById('podsGridResult');
+  const totalRoundsInput = document.getElementById('totalRoundsInput');
 
   // ---------- Sala de espera (Firebase) ----------
   const roomCreate = document.getElementById('roomCreate');
@@ -644,7 +662,6 @@
     roomCreate.classList.remove('hidden');
     roomActive.classList.add('hidden');
     step3.classList.add('hidden');
-    timerPanel.classList.add('hidden');
   });
 
   createRoomBtn.addEventListener('click', async () => {
@@ -654,11 +671,13 @@
 
     try {
       roomCode = generateCode();
+      const rondasTotales = Math.max(1, parseInt(totalRoundsInput.value, 10) || 3);
 
       await setDoc(doc(db, 'torneos', roomCode), {
         estado: 'abierto',
         creado: serverTimestamp(),
         organizadorUid: currentUser.uid,
+        rondasTotales,
       });
 
       const joinUrl = new URL('unirse.html', location.href);
@@ -744,16 +763,23 @@
       podSizes = distributePods(n);
       const shuffled = shuffle(lastRosterNames);
       const pods = buildPodsArray(podSizes, shuffled);
+      const puntos = {};
+      lastRosterNames.forEach((nombre) => { puntos[nombre] = 0; });
 
       if (db && roomCode) {
-        await updateDoc(doc(db, 'torneos', roomCode), { estado: 'cerrado', pods });
+        await updateDoc(doc(db, 'torneos', roomCode), {
+          estado: 'cerrado',
+          pods,
+          rondaActual: 1,
+          puntos,
+        });
+        await crearVidasParaRonda(1, pods);
       }
       if (unsubscribe) unsubscribe();
 
       renderResultPods(podSizes, shuffled);
 
       step3.classList.remove('hidden');
-      timerPanel.classList.remove('hidden');
       step3.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (err) {
       countWarning.textContent = 'No pudimos cerrar las inscripciones. Verifica tu conexión a internet e intenta de nuevo.';
@@ -773,6 +799,7 @@
 
       if (db && roomCode) {
         await updateDoc(doc(db, 'torneos', roomCode), { pods });
+        await crearVidasParaRonda(1, pods);
       }
       renderResultPods(podSizes, shuffled);
     } catch (err) {
@@ -803,87 +830,34 @@
     });
   }
 
-  // ---------- Timer ----------
-  // El estado del timer se guarda en Firestore (torneos/{code}.timer) para que
-  // cada participante lo vea en su celular. En vez de descontar segundo a
-  // segundo, se guarda un "ancla" (endsAtMillis: el instante en que llega a
-  // cero) y cada dispositivo recalcula localmente cuánto falta comparando con
-  // su propio reloj — así no depende de mantener un setInterval sincronizado
-  // entre el organizador y cada participante, y no se atrasa si la pestaña
-  // queda en segundo plano.
+  // ---------- Iniciar torneo: arranca el tiempo y pasa el control a torneo.html ----------
   const timerMinutesInput = document.getElementById('timerMinutes');
-  const applyTimerBtn = document.getElementById('applyTimerBtn');
-  const timerDisplay = document.getElementById('timerDisplay');
-  const startPauseBtn = document.getElementById('startPauseBtn');
-  const resetTimerBtn = document.getElementById('resetTimerBtn');
-  const timerHint = document.getElementById('timerHint');
+  const startTournamentBtn = document.getElementById('startTournamentBtn');
 
-  let timerState = { totalSeconds: 50 * 60, remainingSeconds: 50 * 60, endsAtMillis: null, running: false };
-
-  function formatTime(s) {
-    const m = Math.floor(Math.abs(s) / 60).toString().padStart(2, '0');
-    const sec = Math.abs(s % 60).toString().padStart(2, '0');
-    return (s < 0 ? '-' : '') + `${m}:${sec}`;
-  }
-
-  function currentRemaining() {
-    if (timerState.running && timerState.endsAtMillis) {
-      return Math.round((timerState.endsAtMillis - Date.now()) / 1000);
-    }
-    return timerState.remainingSeconds;
-  }
-
-  function renderTimer() {
-    const remaining = currentRemaining();
-    timerDisplay.textContent = formatTime(remaining);
-    timerDisplay.classList.remove('warn', 'danger');
-    if (remaining <= 0) {
-      timerDisplay.classList.add('danger');
-      timerHint.textContent = '¡Tiempo de ronda cumplido! Definir por vida restante / daño de comandante según reglas del torneo.';
-    } else if (remaining <= 300) {
-      timerDisplay.classList.add('warn');
-      timerHint.textContent = 'Últimos 5 minutos de ronda.';
-    } else {
-      timerHint.textContent = '';
-    }
-    startPauseBtn.textContent = timerState.running ? '⏸️ Pausar' : '▶️ Iniciar';
-  }
-
-  async function persistTimer() {
-    if (!db || !roomCode) return;
-    try {
-      await updateDoc(doc(db, 'torneos', roomCode), { timer: { ...timerState } });
-    } catch (err) {
-      timerHint.textContent = 'No pudimos sincronizar el tiempo con los participantes (sigue corriendo solo en esta pantalla).';
-    }
-  }
-
-  applyTimerBtn.addEventListener('click', async () => {
+  startTournamentBtn.addEventListener('click', async () => {
     const mins = parseInt(timerMinutesInput.value, 10);
     if (!mins || mins < 1) return;
-    timerState = { totalSeconds: mins * 60, remainingSeconds: mins * 60, endsAtMillis: null, running: false };
-    renderTimer();
-    await persistTimer();
-  });
+    if (!db || !roomCode) return;
 
-  startPauseBtn.addEventListener('click', async () => {
-    if (timerState.running) {
-      timerState = { ...timerState, remainingSeconds: currentRemaining(), endsAtMillis: null, running: false };
-    } else {
-      timerState = { ...timerState, endsAtMillis: Date.now() + timerState.remainingSeconds * 1000, running: true };
+    startTournamentBtn.disabled = true;
+    countWarning.classList.remove('show');
+
+    try {
+      const totalSeconds = mins * 60;
+      const timer = {
+        totalSeconds,
+        remainingSeconds: totalSeconds,
+        endsAtMillis: Date.now() + totalSeconds * 1000,
+        running: true,
+      };
+      await updateDoc(doc(db, 'torneos', roomCode), { timer });
+      location.href = `torneo.html?code=${roomCode}`;
+    } catch (err) {
+      countWarning.textContent = 'No pudimos iniciar el torneo. Verifica tu conexión a internet e intenta de nuevo.';
+      countWarning.classList.add('show');
+      startTournamentBtn.disabled = false;
     }
-    renderTimer();
-    await persistTimer();
   });
-
-  resetTimerBtn.addEventListener('click', async () => {
-    timerState = { ...timerState, remainingSeconds: timerState.totalSeconds, endsAtMillis: null, running: false };
-    renderTimer();
-    await persistTimer();
-  });
-
-  setInterval(renderTimer, 1000);
-  renderTimer();
 </script>
 
 </body>

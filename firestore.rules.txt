@@ -3,28 +3,64 @@
 //
 // Modelo de datos:
 //   /usuarios/{uid}                        -> { tipo: 'individual' | 'tienda', email: string, direccion?: string, creado: timestamp }
-//   /torneos/{codigo}                      -> { estado: 'abierto' | 'cerrado', creado: timestamp, organizadorUid: string, pods?: { jugadores: string[] }[], timer?: { totalSeconds: number, remainingSeconds: number, endsAtMillis: number|null, running: boolean } }
+//   /torneos/{codigo}                      -> {
+//     estado: 'abierto' | 'cerrado' | 'finalizado', creado: timestamp, organizadorUid: string,
+//     rondasTotales: number, rondaActual?: number,
+//     pods?: { jugadores: string[], ganadores?: string[] }[],
+//     puntos?: { [nombre: string]: number },
+//     rondasCompletadas?: { numero: number, pods: { jugadores: string[], ganadores: string[] }[] }[],
+//     timer?: { totalSeconds: number, remainingSeconds: number, endsAtMillis: number|null, running: boolean } | null
+//   }
 //   /torneos/{codigo}/participantes/{id}   -> { nombre: string, unidoEn: timestamp }
+//   /torneos/{codigo}/vidas/{rN_pM}         -> {
+//     jugadores: { [nombre: string]: {
+//       vida: number, veneno: number, energia: number, experiencia: number,
+//       radiacion: number, tickets: number,
+//       danoComandante: { [oponente: string]: number }
+//     } }
+//   }
 //
 // "usuarios" guarda el perfil de quien organiza torneos (requiere cuenta vía
 // Firebase Authentication). "direccion" solo se exige si tipo == 'tienda'.
 // Cada usuario solo puede leer/crear su propio documento.
 //
-// "pods" es la lista de pods ya armados; cada pod es un mapa { jugadores: [...] }
-// en vez de un array suelto porque Firestore no admite arrays anidados dentro
-// de un array. El organizador la escribe al cerrar inscripciones y puede
-// volver a escribirla al re-sortear; los participantes solo la leen para ver
-// con quiénes les toca jugar.
+// "pods" es la lista de pods de la ronda actual; cada pod es un mapa
+// { jugadores: [...], ganadores: [...] } en vez de un array suelto porque
+// Firestore no admite arrays anidados dentro de un array. "ganadores" es la
+// lista de quienes quedaron con vida/ganaron ese pod (vacía mientras no se
+// declaró un resultado). Con 1 solo nombre es un ganador claro; con 2 o más
+// es cómo se registra que el tiempo se acabó con varios jugadores en mesa —
+// no hay un concepto de "empate" aparte, es la misma acción de marcar
+// ganador aplicada a más de una persona.
+//
+// "puntos" acumula el puntaje de cada participante entre rondas: un pod con
+// 1 solo ganador le da 3 puntos a esa persona; un pod con 2 o más ganadores
+// reparte 1 punto para cada uno de ellos. "rondasCompletadas" es el
+// historial de rondas ya cerradas (para referencia/armar el bracket
+// completo). Al cerrar una ronda que no es la última, se arman los pods de
+// la siguiente agrupando a los participantes según su puntaje acumulado
+// (de mayor a menor). Al cerrar la última ronda, "estado" pasa a
+// 'finalizado' y "puntos" define las posiciones finales.
 //
 // "timer" sincroniza el temporizador de ronda con cada participante. Se
 // guarda un ancla (endsAtMillis) en vez de descontar segundo a segundo, para
 // que cada dispositivo calcule el tiempo restante con su propio reloj.
 //
+// "vidas/{rN_pM}" es el contador de vidas compartido de un pod en una ronda
+// concreta (r1_p0 = ronda 1, pod 0). El organizador crea el documento con
+// valores por defecto al armar los pods de cada ronda; a partir de ahí,
+// cualquier participante de esa sala puede ajustar los contadores de
+// cualquier jugador (vida, veneno, energía, experiencia, radiación, tickets,
+// daño de comandante recibido de cada rival) sin necesidad de cuenta — es un contador
+// compartido de la partida, con el mismo nivel de confianza que sumarse a
+// la sala: el código de la sala es el único control de acceso.
+//
 // Crear un torneo requiere estar autenticado (organizadorUid == el propio uid).
-// Solo quien lo creó puede actualizarlo (cerrar inscripciones / re-sortear).
-// Cualquiera con el código puede leer la sala y sumarse como participante sin
-// cuenta (como Kahoot). Nadie puede editar ni borrar participantes ya
-// cargados, ni leer/escribir salas o perfiles ajenos fuera de este esquema.
+// Solo quien lo creó puede actualizarlo (cerrar inscripciones, re-sortear,
+// declarar resultados, avanzar de ronda). Cualquiera con el código puede leer
+// la sala y sumarse como participante sin cuenta (como Kahoot). Nadie puede
+// editar ni borrar participantes ya cargados, ni leer/escribir salas o
+// perfiles ajenos fuera de este esquema.
 
 rules_version = '2';
 service cloud.firestore {
@@ -45,13 +81,14 @@ service cloud.firestore {
     match /torneos/{torneoId} {
       allow read: if true;
       allow create: if request.auth != null
-                    && request.resource.data.keys().hasOnly(['estado', 'creado', 'organizadorUid'])
+                    && request.resource.data.keys().hasOnly(['estado', 'creado', 'organizadorUid', 'rondasTotales'])
                     && request.resource.data.estado == 'abierto'
                     && request.resource.data.organizadorUid == request.auth.uid;
       allow update: if request.auth != null
                     && request.auth.uid == resource.data.organizadorUid
-                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'pods', 'timer'])
-                    && request.resource.data.estado in ['abierto', 'cerrado'];
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['estado', 'pods', 'timer', 'rondaActual', 'puntos', 'rondasCompletadas'])
+                    && request.resource.data.estado in ['abierto', 'cerrado', 'finalizado'];
       allow delete: if false;
 
       match /participantes/{participanteId} {
@@ -62,6 +99,14 @@ service cloud.firestore {
                       && request.resource.data.nombre.size() <= 40
                       && get(/databases/$(database)/documents/torneos/$(torneoId)).data.estado == 'abierto';
         allow update, delete: if false;
+      }
+
+      // Contador de vidas compartido: cualquiera con el código de la sala
+      // puede leer y ajustar los contadores (mismo modelo de confianza que
+      // sumarse como participante). No se valida la forma interna porque los
+      // nombres de jugadores son claves dinámicas del mapa.
+      match /vidas/{podKey} {
+        allow read, write: if true;
       }
     }
   }
